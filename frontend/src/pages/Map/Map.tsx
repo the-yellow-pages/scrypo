@@ -20,25 +20,46 @@ const Map = () => {
         longitude: -122.4194,
         zoom: 3,
         width: '100%',
-        height: '100%',
+        height: '80%',
     });
-    const mapboxAPIToken = "pk.eyJ1Ijoic3RldmVuZHNheWxvciIsImEiOiJja295ZmxndGEwbGxvMm5xdTc3M2MwZ2xkIn0.WDBLMZYfh-ZGFjmwO82xvw"
+
+    const [selectedCoord, setSelectedCoord] = React.useState<{ latitude: number; longitude: number } | null>(null);
+
+    const mapboxAPIToken = "pk.eyJ1Ijoic3RldmVuZHNheWxvciIsImEiOiJja295ZmxndGEwbGxvMm5xdTc3M2MwZ2xkIn0.WDBLMZYfh-ZGFjmwO82xvw";
 
     return (
         <div style={{
-            width: '100%',
-            height: '65vh',
+            height: '100%',
             padding: '1rem'
         }}>
+            <div style={{
+            }
+            }>
+                {selectedCoord ? (
+                    <div>Selected Coordinates: Latitude {selectedCoord.latitude}, Longitude {selectedCoord.longitude}</div>
+                ) : (
+                    <div>Click on a marker to see its coordinates</div>
+                )}
+            </div>
             <MapGL
                 {...viewport}
                 mapStyle="mapbox://styles/mapbox/streets-v11"
-                mapboxAccessToken={mapboxAPIToken} // Fixed prop name
-                onMove={(evt) => setViewport({ ...viewport, ...evt.viewState })} // Merging viewState with viewport
+                mapboxAccessToken={mapboxAPIToken}
+                onMove={(evt) => setViewport({ ...viewport, ...evt.viewState })}
+                style={{ height: '80%' }}
             >
                 {coordinates.map((coord, index) => (
                     <Marker key={index} latitude={coord.latitude} longitude={coord.longitude}>
-                        <div style={{ backgroundColor: 'red', borderRadius: '50%', width: '10px', height: '10px' }}></div>
+                        <div
+                            onClick={() => setSelectedCoord(coord)}
+                            style={{
+                                backgroundColor: selectedCoord?.latitude === coord.latitude && selectedCoord?.longitude === coord.longitude ? 'red' : 'blue',
+                                borderRadius: '50%',
+                                width: '10px',
+                                height: '10px',
+                                cursor: 'pointer'
+                            }}
+                        ></div>
                     </Marker>
                 ))}
             </MapGL>
