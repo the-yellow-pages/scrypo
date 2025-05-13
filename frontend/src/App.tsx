@@ -12,8 +12,14 @@ function App() {
     <div className="app-container">
       <header className="main-header">
         <img src={logo} alt="Scrypo Logo" className="app-logo" />
-        <h2>Welcome to the Application</h2>
+        <h2>See Crypto, Meet people</h2>
       </header>
+      <main className="main-content">
+        <Routes>
+          <Route path="/map" element={<Map />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </main>
       <nav className="navbar">
         <div className="navbar-top">
           <WalletConnectorModal />
@@ -23,12 +29,6 @@ function App() {
           <button className="navbar-button" onClick={() => navigate('/profile')}>Profile</button>
         </div>
       </nav>
-      <main className="main-content">
-        <Routes>
-          <Route path="/map" element={<Map />} />
-          <Route path="/profile" element={<Profile />} />
-        </Routes>
-      </main>
     </div>
   );
 }

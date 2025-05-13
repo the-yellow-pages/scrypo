@@ -25,7 +25,11 @@ const Map = () => {
     const mapboxAPIToken = "pk.eyJ1Ijoic3RldmVuZHNheWxvciIsImEiOiJja295ZmxndGEwbGxvMm5xdTc3M2MwZ2xkIn0.WDBLMZYfh-ZGFjmwO82xvw"
 
     return (
-        <div style={{ width: '100%', height: '100vh' }}>
+        <div style={{
+            width: '100%',
+            height: '65vh',
+            padding: '1rem'
+        }}>
             <MapGL
                 {...viewport}
                 mapStyle="mapbox://styles/mapbox/streets-v11"

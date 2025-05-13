@@ -2,7 +2,14 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
+  padding-top: 0.5rem;
   text-align: center;
+}
+
+/* Ensure scrolling is disabled for the body and root elements */
+body {
+  overflow: hidden;
+  /* Disable scrolling */
 }
 
 .logo {
@@ -50,7 +57,13 @@
   height: 100vh;
 }
 
-/* Ensure the navbar always adapts to fill the footer on mobile browsers */
+
+.main-content {
+  flex: 1;
+  padding: 1rem;
+  /* Allow the main content to take up the remaining space */
+}
+
 .navbar {
   position: fixed;
   bottom: 0;
@@ -89,21 +102,13 @@
   background-color: #218838;
 }
 
-.main-content {
-  flex: 1;
-  padding: 1rem;
-  overflow-y: auto;
-  padding-bottom: 60px;
-  /* Reserve space for the fixed navbar */
-}
-
 /* Align logo and welcome text in one line */
 .main-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.5rem;
+  padding: 0.5rem;
 }
 
 .app-logo {
