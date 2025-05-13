@@ -39,6 +39,18 @@ const Maps = () => {
             const bounds = mapRef.current.getBounds();
 
             if (!bounds) return;
+            // The bounds object represents the geographical bounding box of the currently 
+            // visible area of the map. It is defined by two points: {
+            //   "_sw": {
+            //     "lng": -138.98518853180713,
+            //     "lat": -1.029049213137938
+            //   },
+            //   "_ne": {
+            //     "lng": -76.5825607424681,
+            //     "lat": 65.86014725705485
+            //   }
+            // }
+            console.log('bounds', bounds);
             const options = {
                 center: { lng: coord.longitude, lat: coord.latitude },
 
