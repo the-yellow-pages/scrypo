@@ -2,7 +2,7 @@ import './App.css';
 import logo from './assets/logo-scrypo.png';
 import { WalletConnectorModal } from './WalletConnectorModal';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import Map from './pages/Map/Map';
+import Maps from './pages/Map/Map';
 import Profile from './pages/Profile/Profile';
 
 function App() {
@@ -16,7 +16,7 @@ function App() {
       </header>
       <main className="main-content">
         <Routes>
-          <Route path="/map" element={<Map />} />
+          <Route path="/map" element={<Maps />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
