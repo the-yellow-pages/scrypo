@@ -2,8 +2,8 @@ import './App.css';
 import logo from './assets/logo-scrypo.png';
 import { WalletConnectorModal } from './WalletConnectorModal';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import Map from './Map';
-import Profile from './Profile';
+import Map from './pages/Map/Map';
+import Profile from './pages/Profile/Profile';
 
 function App() {
   const navigate = useNavigate();
