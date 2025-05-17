@@ -1,11 +1,30 @@
-//  --- Add your pg table schemas here ----
+import {
+    pgTable,
+    text,
+    numeric,
+    doublePrecision,
+    geometry,
+    index,
+} from "drizzle-orm/pg-core";
 
-// import { bigint, pgTable, text, uuid } from "drizzle-orm/pg-core";
+export const profiles = pgTable("profiles", {
+    /** wallet address = primary key */
+    address: text("address").primaryKey(),
 
-// export const cursorTable = pgTable("cursor_table", {
-//   id: uuid("id").primaryKey().defaultRandom(),
-//   endCursor: bigint("end_cursor", { mode: "number" }),
-//   uniqueKey: text("unique_key"),
-// });
+    /** extra profile fields */
+    name: text("name"),
+    tags0: numeric("tags0", { precision: 78, scale: 0 }),
+    tags1: numeric("tags1", { precision: 78, scale: 0 }),
+    tags2: numeric("tags2", { precision: 78, scale: 0 }),
+    tags3: numeric("tags3", { precision: 78, scale: 0 }),
 
-export {};
+    location: geometry('location', { type: 'point', mode: 'xy', srid: 4326 }).notNull(),
+
+    /** PostGIS-friendly coords (°) */
+    // lat: doublePrecision("lat"),
+    // lon: doublePrecision("lon"),
+},
+(t) => [
+    index('spatial_index').using('gist', t.location),
+]
+);

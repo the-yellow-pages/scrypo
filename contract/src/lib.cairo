@@ -50,7 +50,16 @@ mod user_profile {
 
     /// Event emitted every time a profile is created or updated.
     #[event]
-    fn ProfileUpdated(addr: ContractAddress, latitude: felt252, longitude: felt252);
+    fn ProfileUpdated(
+        addr: ContractAddress,
+        name: felt252,
+        tags0: u256,
+        tags1: u256,
+        tags2: u256,
+        tags3: u256,
+        latitude: felt252,
+        longitude: felt252,
+    );
 
     /// ABI implementation exposing the public interface.
     #[abi(embed_v0)]
@@ -80,7 +89,11 @@ mod user_profile {
 
             self.profiles.entry(caller).write(profile);
             // Emit event for off‑chain indexers
-            ProfileUpdated(caller, latitude, longitude);
+            ProfileUpdated(
+                        get_caller_address(), name,
+                        tags0, tags1, tags2, tags3,
+                        latitude, longitude,
+            );
         }
 
         /// View function to fetch a profile by address.
