@@ -3,6 +3,8 @@
 // Stores a per‑account profile with name, 1024‑bit tag bit‑field and geo‑coordinates.
 // Emits `ProfileUpdated` events for off‑chain indexing.
 
+use starknet::ContractAddress;
+
 #[starknet::interface]
 pub trait IProfileRegistry<TContractState> {
     /// Create or update (idempotent) the caller’s profile.
@@ -16,15 +18,14 @@ pub trait IProfileRegistry<TContractState> {
         latitude: felt252,
         longitude: felt252,
     );
-
     /// Read a stored profile.
-    fn get_profile(self: @TContractState, addr: ContractAddress) -> Profile;
+    fn get_profile(self: @TContractState, addr: ContractAddress) -> user_profile::Profile;
 }
 
 #[starknet::contract]
 mod user_profile {
     use starknet::{ContractAddress, get_caller_address};
-    use starknet::storage::Map;
+    use starknet::storage::{StorageMapWriteAccess, StorageMapReadAccess, Map};
     use core::integer::u256;
 
     /// Persistent storage layout.
@@ -50,7 +51,13 @@ mod user_profile {
 
     /// Event emitted every time a profile is created or updated.
     #[event]
-    fn ProfileUpdated(
+    #[derive(Drop, starknet::Event)]
+    pub enum Event {
+        ProfileUpdated: ProfileUpdated,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct ProfileUpdated {
         addr: ContractAddress,
         name: felt252,
         tags0: u256,
@@ -59,7 +66,7 @@ mod user_profile {
         tags3: u256,
         latitude: felt252,
         longitude: felt252,
-    );
+    }
 
     /// ABI implementation exposing the public interface.
     #[abi(embed_v0)]
@@ -77,28 +84,21 @@ mod user_profile {
         ) {
             let caller = get_caller_address();
 
-            let profile = Profile {
-                name,
-                tags0,
-                tags1,
-                tags2,
-                tags3,
-                latitude,
-                longitude,
-            };
+            let profile = Profile { name, tags0, tags1, tags2, tags3, latitude, longitude };
 
-            self.profiles.entry(caller).write(profile);
+            self.profiles.write(caller, profile);
             // Emit event for off‑chain indexers
-            ProfileUpdated(
-                        get_caller_address(), name,
-                        tags0, tags1, tags2, tags3,
-                        latitude, longitude,
-            );
+            self
+                .emit(
+                    ProfileUpdated {
+                        addr: caller, name, tags0, tags1, tags2, tags3, latitude, longitude,
+                    },
+                );
         }
 
         /// View function to fetch a profile by address.
         fn get_profile(self: @ContractState, addr: ContractAddress) -> Profile {
-            self.profiles.entry(addr).read()
+            self.profiles.read(addr)
         }
     }
 }
