@@ -7,7 +7,7 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 pub trait IProfileRegistry<TContractState> {
-    /// Create or update (idempotent) the caller’s profile.
+    /// Create or update (idempotent) the caller's profile.
     fn deploy_profile(
         ref self: TContractState,
         name: felt252,
@@ -17,6 +17,8 @@ pub trait IProfileRegistry<TContractState> {
         tags3: u256,
         latitude: felt252,
         longitude: felt252,
+        pubkey_hi: felt252,
+        pubkey_lo: felt252,
     );
     /// Read a stored profile.
     fn get_profile(self: @TContractState, addr: ContractAddress) -> user_profile::Profile;
@@ -47,6 +49,9 @@ mod user_profile {
         /// Coordinates — signed fixed‑point integers (deg × 1e6) in felts.
         latitude: felt252,
         longitude: felt252,
+        /// Public key split into two felt252 values
+        pubkey_hi: felt252,
+        pubkey_lo: felt252,
     }
 
     /// Event emitted every time a profile is created or updated.
@@ -66,12 +71,14 @@ mod user_profile {
         tags3: u256,
         latitude: felt252,
         longitude: felt252,
+        pubkey_hi: felt252,
+        pubkey_lo: felt252,
     }
 
     /// ABI implementation exposing the public interface.
     #[abi(embed_v0)]
     impl UserProfile of super::IProfileRegistry<ContractState> {
-        /// Deploy or update caller’s profile.
+        /// Deploy or update caller's profile.
         fn deploy_profile(
             ref self: ContractState,
             name: felt252,
@@ -81,17 +88,38 @@ mod user_profile {
             tags3: u256,
             latitude: felt252,
             longitude: felt252,
+            pubkey_hi: felt252,
+            pubkey_lo: felt252,
         ) {
             let caller = get_caller_address();
 
-            let profile = Profile { name, tags0, tags1, tags2, tags3, latitude, longitude };
+            let profile = Profile { 
+                name, 
+                tags0, 
+                tags1, 
+                tags2, 
+                tags3, 
+                latitude, 
+                longitude,
+                pubkey_hi,
+                pubkey_lo,
+            };
 
             self.profiles.write(caller, profile);
             // Emit event for off‑chain indexers
             self
                 .emit(
                     ProfileUpdated {
-                        addr: caller, name, tags0, tags1, tags2, tags3, latitude, longitude,
+                        addr: caller, 
+                        name, 
+                        tags0, 
+                        tags1, 
+                        tags2, 
+                        tags3, 
+                        latitude, 
+                        longitude,
+                        pubkey_hi,
+                        pubkey_lo,
                     },
                 );
         }

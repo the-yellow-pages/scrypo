@@ -3,6 +3,8 @@ import { useState } from "react"
 import { CallData } from "starknet"
 import { profileRegistryAbi } from "abi/profileRegistryAbi"
 import { Button } from "components/Button"
+import { useUserKeyGenerator } from "msg/UserKeyGenerator"
+import { pubToFelts } from "msg/keyHelpers"
 
 const ProfileRegistry = ({
     setLastTxError,
@@ -13,6 +15,7 @@ const ProfileRegistry = ({
 }) => {
     const { account } = useAccount()
     const [lastTxStatus, setLastTxStatus] = useState("idle")
+    const { generateKeys } = useUserKeyGenerator()
 
     const { contract } = useContract({
         abi: profileRegistryAbi,
@@ -34,6 +37,8 @@ const ProfileRegistry = ({
                             "0x0", // tags3 (u256)
                             "0x0", // latitude (felt252)
                             "0x0", // longitude (felt252)
+                            "0x0", // pubkey_hi (felt252) - will be updated
+                            "0x0", // pubkey_lo (felt252) - will be updated
                         ]),
                     },
                 ]
@@ -47,7 +52,30 @@ const ProfileRegistry = ({
             setLastTxError("")
             e.preventDefault()
             setLastTxStatus("approve")
-            const { transaction_hash } = await sendAsync()
+
+            // Generate keys first
+            const { publicKey } = await generateKeys()
+            const [pubkeyHi, pubkeyLo] = pubToFelts(publicKey)
+
+            // Update calldata with the public key
+            const { transaction_hash } = await sendAsync([
+                {
+                    contractAddress,
+                    entrypoint: "deploy_profile",
+                    calldata: CallData.compile([
+                        "0x123", // name (felt252)
+                        "0x0", // tags0 (u256)
+                        "0x0", // tags1 (u256)
+                        "0x0", // tags2 (u256)
+                        "0x0", // tags3 (u256)
+                        "0x0", // latitude (felt252)
+                        "0x0", // longitude (felt252)
+                        pubkeyHi, // pubkey_hi (felt252)
+                        pubkeyLo, // pubkey_lo (felt252)
+                    ]),
+                },
+            ])
+
             setTimeout(() => {
                 alert(`Transaction sent: ${transaction_hash}`)
             })
