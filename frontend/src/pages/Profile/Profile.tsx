@@ -9,9 +9,17 @@ function Profile() {
 
     const handleGenerateKeys = async () => {
         try {
+            console.log('Starting key generation...');
             const { publicKey: newPublicKey } = await generateKeys();
-            setPublicKey(Buffer.from(newPublicKey).toString('hex'));
+            console.log('Received public key:', newPublicKey);
+            if (!newPublicKey || newPublicKey.length === 0) {
+                throw new Error('Generated public key is empty');
+            }
+            const hexKey = Array.from(newPublicKey).map(b => b.toString(16).padStart(2, '0')).join('');
+            console.log('Converted to hex:', hexKey);
+            setPublicKey(hexKey);
         } catch (error) {
+            console.error('Key generation error:', error);
             setLastTxError(error instanceof Error ? error.message : "Failed to generate keys");
         }
     };

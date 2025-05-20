@@ -52,10 +52,18 @@ export class UserKeyGenerator {
         await sodium.ready
 
         const rawSig = await account.signMessage(this.TYPED_DATA)
+        // console.log('Raw signature:', rawSig)
         const sigHex = rawSig.join("").replace(/^0x/, "")
+        // console.log('Signature hex:', sigHex)
 
         const seed = keccak_256(sigHex)
-        return sodium.crypto_box_seed_keypair(seed)
+        // console.log('Seed length:', seed.length)
+        // console.log('Seed:', Array.from(seed).map(b => b.toString(16).padStart(2, '0')).join(''))
+
+        const keypair = sodium.crypto_box_seed_keypair(seed)
+        // console.log('Generated public key length:', keypair.publicKey.length)
+        // console.log('Generated private key length:', keypair.privateKey.length)
+        return keypair
     }
 }
 
