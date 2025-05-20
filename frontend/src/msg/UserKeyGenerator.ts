@@ -25,7 +25,7 @@ export class UserKeyGenerator {
     private static readonly DOMAIN = {
         name: "StarkChat.KDF",
         version: "1",
-        chainId: "SN_MAIN",
+        chainId: "SN_SEPOLIA",
     }
 
     private static readonly TYPED_DATA = {
