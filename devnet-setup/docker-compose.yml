@@ -1,0 +1,73 @@
+services:
+  devnet:
+    image: shardlabs/starknet-devnet-rs:0.3.0-rc.1
+    command:
+      - --dump-on=exit
+      - --dump-path=/data/dump
+    volumes:
+      - devnet:/data
+    ports:
+      - "5050:5050"
+  minio:
+    image: bitnami/minio:latest
+    user: "0:0"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_DATA_DIR: "/data"
+      MINIO_ROOT_USER: "minioadmin"
+      MINIO_DEFAULT_BUCKETS: "dna:public"
+      MINIO_ROOT_PASSWORD: "minioadmin"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+  etcd:
+    image: bitnami/etcd:latest
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    volumes:
+      - etcd_data:/bitnami/etcd
+  dna:
+    image: docker.apibara.com/apibara/dna-starknet:2.0.0-beta.31
+    command: ["start", "--ingestion.enabled", "--compaction.enabled", "--cache.dir=/data", "--server.enabled"]
+    restart: always
+    ports:
+      - "7007:7007"
+    depends_on:
+      minio:
+        condition: service_healthy
+        restart: true
+      etcd:
+        condition: service_started
+    environment:
+      STARKNET_RPC_URL: "http://devnet:5050/rpc"
+      DNA_SERVER_CACHE_DIR: "/data"
+      DNA_ETCD_ENDPOINTS: "http://etcd:2379"
+      DNA_S3_BUCKET: "dna"
+      DNA_INGESTION_CHAIN_SEGMENT_SIZE: "100"
+      DNA_COMPACTION_SEGMENT_SIZE: "100"
+      DNA_COMPACTION_GROUP_SIZE: "100"
+      STARKNET_INGEST_TRACES: "false"
+      DNA_INGESTION_PENDING_REFRESH_INTERVAL: "1s"
+      DNA_S3_ENDPOINT: "http://minio:9000"
+      DNA_S3_REGION: "auto"
+      AWS_DEFAULT_REGION: auto
+      AWS_ACCESS_KEY_ID: ObIvq9d2uPLxZuSm16Ja
+      AWS_SECRET_ACCESS_KEY: p9uKe62xaXsHMMLsY418f1DW1PvhUutRmhE4d1g4
+
+volumes:
+  minio_data:
+  etcd_data:
+  devnet:
+
+
+#      STARKNET_RPC_URL: "https://pathfinder.api.prod.paradex.trade/rpc/v0_7"
