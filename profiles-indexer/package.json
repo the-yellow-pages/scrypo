@@ -6,25 +6,37 @@
   "scripts": {
     "prepare": "apibara prepare",
     "dev": "apibara dev",
+    "dev:server": "nodemon server.ts",
     "start": "apibara start",
+    "start:server": "node dist/server.js",
     "build": "apibara build",
+    "build:server": "tsc",
+    "build:all": "pnpm run build && pnpm run build:server",
     "typecheck": "tsc --noEmit",
     "drizzle:generate": "drizzle-kit generate",
     "drizzle:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
-    "@apibara/protocol": "next",
-    "apibara": "next",
-    "@apibara/starknet": "next",
     "@apibara/plugin-drizzle": "next",
-    "drizzle-orm": "^0.40.1",
+    "@apibara/protocol": "next",
+    "@apibara/starknet": "next",
     "@electric-sql/pglite": "^0.2.17",
+    "apibara": "next",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
     "drizzle-kit": "^0.29.0",
+    "drizzle-orm": "^0.40.1",
+    "express": "^5.1.0",
     "pg": "^8.13.1"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.2",
     "@types/node": "^20.5.2",
-    "typescript": "^5.6.2",
-    "@types/pg": "^8.11.10"
+    "@types/pg": "^8.11.10",
+    "concurrently": "^9.1.2",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2"
   }
 }

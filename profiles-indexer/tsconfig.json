@@ -4,15 +4,29 @@
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
     "target": "ES2022",
-    "lib": ["ESNext"],
+    "lib": [
+      "ESNext"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
+    "outDir": "./dist",
     "skipLibCheck": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "noEmit": true,
     "strict": true,
     "baseUrl": "."
   },
-  "include": [".", "./.apibara/types"],
-  "exclude": ["node_modules"]
+  "include": [
+    ".",
+    "./.apibara/types"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
