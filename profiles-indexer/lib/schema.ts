@@ -20,11 +20,15 @@ export const profiles = pgTable("profiles", {
 
     location: geometry('location', { type: 'point', mode: 'xy', srid: 4326 }).notNull(),
 
+    /** Public key fields */
+    pubkey_hi: numeric("pubkey_hi", { precision: 78, scale: 0 }),
+    pubkey_lo: numeric("pubkey_lo", { precision: 78, scale: 0 }),
+
     /** PostGIS-friendly coords (°) */
     // lat: doublePrecision("lat"),
     // lon: doublePrecision("lon"),
 },
-(t) => [
-    index('spatial_index').using('gist', t.location),
-]
+    (t) => [
+        index('spatial_index').using('gist', t.location),
+    ]
 );
