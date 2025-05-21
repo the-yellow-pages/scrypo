@@ -6,6 +6,7 @@ import { StarknetStream, getSelector } from "@apibara/starknet";
 import type { ApibaraRuntimeConfig } from "apibara/types";
 import * as schema from "../lib/schema";
 import { profiles } from "../lib/schema";
+import { feltToDeg } from "../../frontend/src/helpers/cords";
 
 export default function (runtimeConfig: ApibaraRuntimeConfig) {
     const { startingBlock, streamUrl, contractAddress } =
@@ -63,8 +64,8 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
                     tags2: BigInt(tags2).toString(),
                     tags3: BigInt(tags3).toString(),
                     location: {
-                        x: Number(latFelt) / 1_000_000,
-                        y: Number(lonFelt) / 1_000_000,
+                        x: feltToDeg(BigInt(latFelt)),
+                        y: feltToDeg(BigInt(lonFelt)),
                     },
                 };
 
@@ -92,5 +93,9 @@ function toHex(felt: bigint | string): `0x${string}` {
 /** Decode short-string (< 31 bytes) felt */
 function feltToShortString(felt: bigint | string): string {
     const hex = BigInt(felt).toString(16).padStart(62, "0");
-    return Buffer.from(hex, "hex").toString("utf8").replace(/\0+$/, "");
+    // Convert to string and remove any null bytes or invalid UTF-8 sequences
+    return Buffer.from(hex, "hex")
+        .toString("utf8")
+        .replace(/\0/g, "") // Remove null bytes
+        .replace(/[^\x20-\x7E]/g, ""); // Keep only printable ASCII
 }

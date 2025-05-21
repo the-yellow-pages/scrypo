@@ -38,3 +38,8 @@ pnpm drizzle-kit push
 ```
 
 ↑ same as: `drizzle-kit push:pg --config drizzle.config.ts`
+
+
+DB cheetsheet:
+
+`psql -U apibara -d profiles`

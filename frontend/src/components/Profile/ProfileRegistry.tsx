@@ -5,6 +5,7 @@ import { profileRegistryAbi } from "abi/profileRegistryAbi"
 import { Button } from "components/Button"
 import { useUserKeyGenerator } from "msg/UserKeyGenerator"
 import { pubToFelts } from "msg/keyHelpers"
+import { degToFelt } from "helpers/cords"
 
 const ProfileRegistry = ({
     setLastTxError,
@@ -81,6 +82,8 @@ const ProfileRegistry = ({
                 throw new Error("Contract or account not initialized")
             }
             const cords = { latitude: 42.712645, longitude: 2.966081 };
+            const latitudeFelt = degToFelt(cords.latitude).toString()
+            const longitudeFelt = degToFelt(cords.longitude).toString()
 
             const calldata = CallData.compile([
                 "0x123", // name (felt252)
@@ -88,8 +91,8 @@ const ProfileRegistry = ({
                 { low: 0, high: 0}, // tags1 (u256)
                 { low: 0, high: 0}, // tags2 (u256)
                 { low: 0, high: 0}, // tags3 (u256)
-                "0", // latitude (felt252)
-                "0", // longitude (felt252)
+                latitudeFelt, // latitude (felt252)
+                longitudeFelt, // longitude (felt252)
                 pubkeyHi, // pubkey_hi (felt252)
                 pubkeyLo, // pubkey_lo (felt252)
             ])
