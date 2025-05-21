@@ -6,7 +6,7 @@
   "scripts": {
     "prepare": "apibara prepare",
     "dev": "apibara dev",
-    "dev:server": "nodemon server.ts",
+    "dev:server": "nodemon --exec 'node --loader ts-node/esm server.ts'",
     "start": "apibara start",
     "start:server": "node dist/server.js",
     "build": "apibara build",
