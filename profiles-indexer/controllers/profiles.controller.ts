@@ -13,9 +13,75 @@ const client = new Client({
 client.connect();
 const db = drizzle(client, { schema });
 
+const validateProfileData = (data: any, isUpdate: boolean = false): string[] => {
+    const errors: string[] = [];
+
+    // Address validation
+    if (!isUpdate) {
+        if (!data.address || typeof data.address !== 'string' || data.address.trim() === '') {
+            errors.push('Address is required and must be a non-empty string.');
+        }
+    } else {
+        if (data.hasOwnProperty('address')) {
+            errors.push('Address cannot be updated via request body.');
+        }
+    }
+
+    // Name validation
+    if (data.hasOwnProperty('name')) {
+        if (data.name !== null && typeof data.name !== 'string') {
+            errors.push('Name must be a string or null.');
+        }
+    }
+
+    // Tags validation
+    for (let i = 0; i < 4; i++) {
+        const tagField = `tags${i}`;
+        if (data.hasOwnProperty(tagField)) {
+            if (data[tagField] !== null && isNaN(Number(data[tagField]))) {
+                errors.push(`${tagField} must be a number, a string convertible to a number, or null.`);
+            }
+        }
+    }
+
+    // Location validation (expects { x: number, y: number } for mode: 'xy')
+    if (!isUpdate) { // Create mode: location is required as per schema (notNull)
+        if (!data.location || typeof data.location !== 'object' || data.location === null ||
+            typeof data.location.x !== 'number' || typeof data.location.y !== 'number') {
+            errors.push('Location is required and must be an object with numeric x and y properties (e.g., { x: longitude, y: latitude }).');
+        }
+    } else { // Update mode: location is optional, but if provided, must be valid
+        if (data.hasOwnProperty('location')) {
+            if (data.location === null || typeof data.location !== 'object' ||
+                typeof data.location.x !== 'number' || typeof data.location.y !== 'number') {
+                errors.push('If provided, location must be a valid object with numeric x and y properties (e.g., { x: longitude, y: latitude }) and cannot be null.');
+            }
+        }
+    }
+
+    // Pubkey validation
+    const pubkeyFields = ['pubkey_hi', 'pubkey_lo'];
+    for (const field of pubkeyFields) {
+        if (data.hasOwnProperty(field)) {
+            if (data[field] !== null && isNaN(Number(data[field]))) {
+                errors.push(`${field} must be a number, a string convertible to a number, or null.`);
+            }
+        }
+    }
+
+    return errors;
+};
+
 export const createProfile = async (req: express.Request, res: express.Response) => {
     try {
         const newProfile = req.body;
+
+        const validationErrors = validateProfileData(newProfile, false);
+        if (validationErrors.length > 0) {
+            res.status(400).json({ error: 'Validation failed', details: validationErrors });
+            return;
+        }
+
         const result = await db.insert(schema.profiles).values(newProfile).returning();
         res.status(201).json(result[0]);
     } catch (error) {
@@ -55,6 +121,24 @@ export const updateProfile = async (req: express.Request, res: express.Response)
     try {
         const { address } = req.params;
         const updatedFields = req.body;
+
+        const validationErrors = validateProfileData(updatedFields, true);
+        if (validationErrors.length > 0) {
+            res.status(400).json({ error: 'Validation failed', details: validationErrors });
+            return;
+        }
+
+        // Ensure no attempt to update address via body, already handled by validateProfileData
+        // but good to be defensive if validateProfileData changes.
+        if (updatedFields.address) {
+            delete updatedFields.address;
+        }
+
+        if (Object.keys(updatedFields).length === 0) {
+            res.status(400).json({ error: 'No fields to update provided.' });
+            return;
+        }
+
         const result = await db
             .update(schema.profiles)
             .set(updatedFields)
