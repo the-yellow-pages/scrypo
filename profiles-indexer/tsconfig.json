@@ -10,14 +10,20 @@
         "resolveJsonModule": true,
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
-        "allowImportingTsExtensions": true,
         "outDir": "./dist",
         "skipLibCheck": true,
         "types": ["node"],
-        "noEmit": true,
         "strict": true,
         "baseUrl": "."
     },
-    "include": [".", "./.apibara/types"],
+    "include": [
+        "server.ts",
+        "apibara.config.ts",
+        "controllers/**/*.ts",
+        "indexers/**/*.ts",
+        "lib/**/*.ts",
+        "routes/**/*.ts",
+        ".apibara/types/**/*.ts"
+    ],
     "exclude": ["node_modules"]
 }

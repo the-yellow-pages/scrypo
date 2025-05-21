@@ -1,7 +1,7 @@
 import express from "express";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
-import * as schema from "../lib/schema.ts";
+import * as schema from "../lib/schema.js";
 import { eq, sql } from "drizzle-orm";
 import dotenv from "dotenv";
 import {
@@ -10,7 +10,7 @@ import {
     ProfileResponse,
     ErrorResponse,
     SuccessResponse,
-} from "./types.ts"; // Import the interfaces
+} from "./types.js";
 dotenv.config();
 
 const client = new Client({
@@ -104,10 +104,10 @@ const validateProfileData = (
         if (data.hasOwnProperty(field)) {
             const fieldValue =
                 data[
-                    field as keyof (
-                        | CreateProfileRequestBody
-                        | UpdateProfileRequestBody
-                    )
+                field as keyof (
+                    | CreateProfileRequestBody
+                    | UpdateProfileRequestBody
+                )
                 ];
             if (fieldValue !== null && isNaN(Number(fieldValue))) {
                 errors.push(
@@ -128,6 +128,8 @@ export const createProfile = async (
     >,
     res: express.Response<ProfileResponse | ErrorResponse>,
 ) => {
+    // Blocked for now, cuz blockchain is the source of truth
+    return;
     try {
         const newProfile = req.body; // req.body is now correctly typed as CreateProfileRequestBody
 
@@ -161,12 +163,12 @@ export const createProfile = async (
                     : null,
             pubkey_hi:
                 newProfile.pubkey_hi !== undefined &&
-                newProfile.pubkey_hi !== null
+                    newProfile.pubkey_hi !== null
                     ? String(newProfile.pubkey_hi)
                     : null,
             pubkey_lo:
                 newProfile.pubkey_lo !== undefined &&
-                newProfile.pubkey_lo !== null
+                    newProfile.pubkey_lo !== null
                     ? String(newProfile.pubkey_lo)
                     : null,
         };
@@ -270,6 +272,8 @@ export const updateProfile = async (
     >,
     res: express.Response<ProfileResponse | ErrorResponse>,
 ) => {
+    // Blocked for now, cuz blockchain is the source of truth
+    return;
     try {
         const { address } = req.params;
         const updatedFieldsBody = req.body; // req.body is now correctly typed as UpdateProfileRequestBody
@@ -357,6 +361,8 @@ export const deleteProfile = async (
     req: express.Request,
     res: express.Response<SuccessResponse | ErrorResponse>,
 ) => {
+    // Blocked for now, cuz blockchain is the source of truth
+    return;
     try {
         const { address } = req.params;
         const result = await db

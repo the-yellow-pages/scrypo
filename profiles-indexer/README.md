@@ -8,6 +8,20 @@ pnpm drizzle-kit push
 pnpm run dev
 ```
 
+### run express server:
+
+For development (with hot-reloading):
+```
+pnpm run dev:server
+```
+
+For production (after building):
+```
+pnpm run build:server
+pnpm run start:server
+```
+
+
 ---
 
 other notes:

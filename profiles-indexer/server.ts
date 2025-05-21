@@ -3,7 +3,7 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
-import profilesRouter from "./routes/profiles.routes.ts";
+import profilesRouter from "./routes/profiles.routes.js"; // Added .js extension
 
 const app = express();
 const port = process.env.PORT || 3000;

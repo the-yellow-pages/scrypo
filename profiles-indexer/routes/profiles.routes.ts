@@ -6,7 +6,7 @@ import {
     deleteProfile,
     getAllProfiles,
     getProfilesWithinArea, // Import the new controller function
-} from "../controllers/profiles.controller.ts";
+} from "../controllers/profiles.controller.js"; // Added .js extension
 
 const router = Router();
 
