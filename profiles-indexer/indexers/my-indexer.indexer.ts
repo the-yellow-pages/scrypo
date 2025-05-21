@@ -19,7 +19,7 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
 
     return defineIndexer(StarknetStream)({
         streamUrl,
-        finality: "accepted",
+        finality: "pending",
         startingBlock: BigInt(startingBlock),
         filter: {
             events: [
@@ -47,27 +47,53 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
                 const [
                     addrFelt,
                     nameFelt,
-                    tags0,
-                    tags1,
-                    tags2,
-                    tags3,
+                    tags0Low,
+                    tags0High,
+                    tags1Low,
+                    tags1High,
+                    tags2Low,
+                    tags2High,
+                    tags3Low,
+                    tags3High,
                     latFelt,
                     lonFelt,
+                    pubkeyHi,
+                    pubkeyLo,
                 ] = ev.data;
+
+                log.info("Raw event data:", ev.data);
+                log.info("Raw lat/lon:", { latFelt, lonFelt });
+                log.info("Lat/lon as BigInt:", { 
+                    latBigInt: BigInt(latFelt).toString(),
+                    lonBigInt: BigInt(lonFelt).toString()
+                });
+
+                // Reconstruct u256 from low and high parts
+                const reconstructU256 = (low: string, high: string) => {
+                    const lowBig = BigInt(low);
+                    const highBig = BigInt(high);
+                    return (highBig << 128n) | lowBig;
+                };
 
                 /* felt → helpers */
                 const rec = {
                     address: toHex(addrFelt),
                     name: feltToShortString(nameFelt),
-                    tags0: BigInt(tags0).toString(),
-                    tags1: BigInt(tags1).toString(),
-                    tags2: BigInt(tags2).toString(),
-                    tags3: BigInt(tags3).toString(),
+                    tags0: reconstructU256(tags0Low, tags0High).toString(),
+                    tags1: reconstructU256(tags1Low, tags1High).toString(),
+                    tags2: reconstructU256(tags2Low, tags2High).toString(),
+                    tags3: reconstructU256(tags3Low, tags3High).toString(),
                     location: {
                         x: feltToDeg(BigInt(latFelt)),
                         y: feltToDeg(BigInt(lonFelt)),
                     },
+                    pubkey_hi: BigInt(pubkeyHi).toString(),
+                    pubkey_lo: BigInt(pubkeyLo).toString(),
                 };
+                log.info("Converted coordinates:", {
+                    x: rec.location.x,
+                    y: rec.location.y
+                });
 
                 /* UPSERT (Drizzle .onConflictDoUpdate) */ // :contentReference[oaicite:3]{index=3}
                 await db
