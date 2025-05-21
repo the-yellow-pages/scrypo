@@ -1,6 +1,6 @@
 import { useAccount, useContract, useSendTransaction } from "@starknet-react/core"
 import { useState } from "react"
-import { CallData } from "starknet"
+import { CallData, uint256 } from "starknet"
 import { profileRegistryAbi } from "abi/profileRegistryAbi"
 import { Button } from "components/Button"
 import { useUserKeyGenerator } from "msg/UserKeyGenerator"
@@ -54,32 +54,62 @@ const ProfileRegistry = ({
             setLastTxStatus("approve")
 
             // Generate keys first
+            console.log("Starting key generation...")
             const { publicKey } = await generateKeys()
-            const [pubkeyHi, pubkeyLo] = pubToFelts(publicKey)
+            console.log("Generated public key:", publicKey)
+            console.log("Public key type:", typeof publicKey)
+            console.log("Public key length:", publicKey.length)
+            
+            let pubkeyHi: string
+            let pubkeyLo: string
+            
+            console.log("Converting public key to felts...")
+            try {
+                [pubkeyHi, pubkeyLo] = pubToFelts(publicKey)
+                console.log("Converted to felts:", { pubkeyHi, pubkeyLo })
+            } catch (convError) {
+                console.error("Error converting public key to felts:", convError)
+                throw convError
+            }
 
             // Update calldata with the public key
+            console.log("Preparing transaction...")
+            console.log("Contract address:", contractAddress)
+            console.log("Account address:", account?.address)
+            
+            if (!contract || !account?.address) {
+                throw new Error("Contract or account not initialized")
+            }
+            const cords = { latitude: 42.712645, longitude: 2.966081 };
+
+            const calldata = CallData.compile([
+                "0x123", // name (felt252)
+                { low: 9283749, high: 0 }, // tags0 (u256)
+                { low: 0, high: 0}, // tags1 (u256)
+                { low: 0, high: 0}, // tags2 (u256)
+                { low: 0, high: 0}, // tags3 (u256)
+                "0", // latitude (felt252)
+                "0", // longitude (felt252)
+                pubkeyHi, // pubkey_hi (felt252)
+                pubkeyLo, // pubkey_lo (felt252)
+            ])
+            console.log("Compiled calldata:", calldata)
+
+            console.log("Sending transaction...")
             const { transaction_hash } = await sendAsync([
                 {
                     contractAddress,
                     entrypoint: "deploy_profile",
-                    calldata: CallData.compile([
-                        "0x123", // name (felt252)
-                        "0x0", // tags0 (u256)
-                        "0x0", // tags1 (u256)
-                        "0x0", // tags2 (u256)
-                        "0x0", // tags3 (u256)
-                        "0x0", // latitude (felt252)
-                        "0x0", // longitude (felt252)
-                        pubkeyHi, // pubkey_hi (felt252)
-                        pubkeyLo, // pubkey_lo (felt252)
-                    ]),
+                    calldata,
                 },
             ])
-
+            console.log("Transaction sent:", transaction_hash)
             setTimeout(() => {
                 alert(`Transaction sent: ${transaction_hash}`)
             })
         } catch (error) {
+            console.error("Full error object:", error)
+            console.error("Error stack:", (error as Error).stack)
             setLastTxError((error as Error).message)
         } finally {
             setLastTxStatus("idle")

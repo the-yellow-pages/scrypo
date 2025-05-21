@@ -1,11 +1,17 @@
 import { SendERC20 } from 'components/Transactions/ERC20';
 import { useState } from 'react';
 import { useUserKeyGenerator } from 'msg/UserKeyGenerator';
+import { ProfileRegistry } from 'components/Profile/ProfileRegistry';
 
 function Profile() {
     const [lastTxError, setLastTxError] = useState("");
     const [publicKey, setPublicKey] = useState<string>("");
     const { generateKeys, isConnected } = useUserKeyGenerator();
+    
+    const profilesContractAddress = import.meta.env.VITE_PROFILES_CONTRACT_ADDRESS
+    if (!profilesContractAddress) {
+        throw new Error("VITE_PROFILES_CONTRACT_ADDRESS environment variable is not set")
+    }
 
     const handleGenerateKeys = async () => {
         try {
@@ -63,6 +69,12 @@ function Profile() {
                         </code>
                     </div>
                 )}
+            </div>
+            <div style={{ marginTop: '20px' }}>
+                <ProfileRegistry 
+                    setLastTxError={setLastTxError}
+                    contractAddress={profilesContractAddress}
+                />
             </div>
         </div>
     );
