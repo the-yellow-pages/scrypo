@@ -1,18 +1,18 @@
 {
-  "id": "65ea2ca2-7ac4-486c-bb34-5e0b62cc5b26",
-  "prevId": "6838ba76-8620-40b8-8480-c59b2fedf761",
-  "version": "7",
-  "dialect": "postgresql",
-  "tables": {},
-  "enums": {},
-  "schemas": {},
-  "views": {},
-  "sequences": {},
-  "roles": {},
-  "policies": {},
-  "_meta": {
-    "columns": {},
+    "id": "65ea2ca2-7ac4-486c-bb34-5e0b62cc5b26",
+    "prevId": "6838ba76-8620-40b8-8480-c59b2fedf761",
+    "version": "7",
+    "dialect": "postgresql",
+    "tables": {},
+    "enums": {},
     "schemas": {},
-    "tables": {}
-  }
+    "views": {},
+    "sequences": {},
+    "roles": {},
+    "policies": {},
+    "_meta": {
+        "columns": {},
+        "schemas": {},
+        "tables": {}
+    }
 }
