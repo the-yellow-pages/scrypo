@@ -43,7 +43,8 @@ export async function getProfilesWithinArea(
 export async function getProfileByAddress(
     address: string,
 ): Promise<ProfileResponse | ErrorResponse> {
-    const res = await fetch(`${API_BASE}/${encodeURIComponent(address)}`);
+    console.log("Fetching profile for address:", address);
+    const res = await fetch(`${API_BASE}/${encodeURIComponent(address.replace(/^0x0+/, '0x'))}`);
     return res.json();
 }
 

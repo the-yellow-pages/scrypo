@@ -17,6 +17,7 @@ function App() {
       <main className="main-content">
         <Routes>
           <Route path="/map" element={<Maps />} />
+          <Route path="/profile/:address" element={<Profile />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
