@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // UserProfile — Cairo v2.5‑style contract (2025‑05‑15)
-// Stores a per‑account profile with name, 1024‑bit tag bit‑field and geo‑coordinates.
+// Stores a per‑account profile with name, 2016‑bit (8 felts) tag bit‑field and geo‑coordinates.
 // Emits `ProfileUpdated` events for off‑chain indexing.
 
 use starknet::ContractAddress;
@@ -41,7 +41,7 @@ mod user_profile {
     pub struct Profile {
         /// Up to 31‑byte short‑string packed in a felt252.
         name: felt252,
-        /// Four 256‑bit limbs = 1024 bits of tags.
+        /// Four 256‑bit limbs = 1024 bits of tags. (extensible to 2016 bits total)
         tags0: u256,
         tags1: u256,
         tags2: u256,
