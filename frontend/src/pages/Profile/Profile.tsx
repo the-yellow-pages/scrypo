@@ -14,6 +14,7 @@ import ProfileSetupForm from './components/ProfileSetupForm';
 import ProfileNotFoundMessage from './components/ProfileNotFoundMessage';
 import ConnectWalletPromptMessage from './components/ConnectWalletPromptMessage';
 import ProfilePageFallback from './components/ProfilePageFallback';
+import { ProfileDeployForm } from '../../components/Profile/ProfileDeployForm';
 
 
 function Profile() {
@@ -104,21 +105,41 @@ function Profile() {
 
     // Case 1: Displaying a fetched profile
     if (profileData && targetAddress) {
-        return <FetchedProfileDisplay profileData={profileData} isOwnProfile={targetAddress === connectedUserAddress} />;
+        return <FetchedProfileDisplay 
+            profileData={profileData} 
+            isOwnProfile={targetAddress === connectedUserAddress} 
+            profilesContractAddress={profilesContractAddress}
+        />;
     }
 
     // Case 2: Connected user's profile doesn't exist (and no fetch error), show setup UI
     if (isConnected && targetAddress === connectedUserAddress && !profileData) {
         return (
-            <ProfileSetupForm
-                connectedUserAddress={connectedUserAddress}
-                lastTxError={lastTxError}
-                setLastTxError={setLastTxError}
-                publicKey={publicKey}
-                handleGenerateKeys={handleGenerateKeys}
-                isConnected={isConnected}
-                profilesContractAddress={profilesContractAddress}
-            />
+            <div className="p-4">
+                <h2 className="text-2xl font-bold mb-4">Set Up Your Profile</h2>
+                <p className="mb-4">Your profile is not yet deployed. Complete the form below to create it.</p>
+                {connectedUserAddress && <p className="mb-4">Connected as: {connectedUserAddress}</p>}
+                
+                <div className="bg-white p-4 rounded-lg shadow mb-4">
+                    <ProfileDeployForm
+                        setLastTxError={setLastTxError}
+                        contractAddress={profilesContractAddress as `0x${string}`}
+                        publicKey={publicKey}
+                        handleGenerateKeys={handleGenerateKeys}
+                    />
+                </div>
+                
+                {lastTxError && (
+                    <div className="error-message p-4 bg-red-100 border border-red-400 rounded mb-4">
+                        <p>Error: {lastTxError}</p>
+                    </div>
+                )}
+                
+                <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-2">Send Tokens</h3>
+                    <SendERC20 setLastTxError={setLastTxError} />
+                </div>
+            </div>
         );
     }
 

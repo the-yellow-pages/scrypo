@@ -4,6 +4,7 @@ import { type ProfileResponse } from '../../../api/types'; // Adjusted import pa
 interface FetchedProfileDisplayProps {
     profileData: ProfileResponse;
     isOwnProfile: boolean;
+    profilesContractAddress?: string;
 }
 
 const FetchedProfileDisplay: React.FC<FetchedProfileDisplayProps> = ({ profileData, isOwnProfile }) => (
