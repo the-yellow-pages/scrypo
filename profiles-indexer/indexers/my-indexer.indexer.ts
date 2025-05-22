@@ -16,6 +16,7 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
     });
 
     const PROFILE_UPDATED = getSelector("ProfileUpdated"); // helper from v2 SDK :contentReference[oaicite:2]{index=2}
+    const MESSAGE_SENT = getSelector("MessageSent");
 
     return defineIndexer(StarknetStream)({
         streamUrl,
@@ -26,6 +27,10 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
                 {
                     address: contractAddress as `0x${string}`,
                     keys: [PROFILE_UPDATED],
+                },
+                {
+                    address: contractAddress as `0x${string}`,
+                    keys: [MESSAGE_SENT],
                 },
             ],
         },
@@ -44,62 +49,77 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
             const { db } = useDrizzleStorage(); // tx-bound Drizzle instance
 
             for (const ev of block.events) {
-                const [
-                    addrFelt,
-                    nameFelt,
-                    tags0Low,
-                    tags0High,
-                    tags1Low,
-                    tags1High,
-                    tags2Low,
-                    tags2High,
-                    tags3Low,
-                    tags3High,
-                    latFelt,
-                    lonFelt,
-                    pubkeyHi,
-                    pubkeyLo,
-                ] = ev.data;
+                if (ev.keys[0] === PROFILE_UPDATED) {
+                    const [
+                        addrFelt,
+                        nameFelt,
+                        tags0Low,
+                        tags0High,
+                        tags1Low,
+                        tags1High,
+                        tags2Low,
+                        tags2High,
+                        tags3Low,
+                        tags3High,
+                        latFelt,
+                        lonFelt,
+                        pubkeyHi,
+                        pubkeyLo,
+                    ] = ev.data;
 
-                log.info("Raw event data:", ev.data);
-                log.info("Raw lat/lon:", { latFelt, lonFelt });
-                log.info("Lat/lon as BigInt:", { 
-                    latBigInt: BigInt(latFelt).toString(),
-                    lonBigInt: BigInt(lonFelt).toString()
-                });
+                    log.info("Raw event data:", ev.data);
+                    log.info("Raw lat/lon:", { latFelt, lonFelt });
+                    log.info("Lat/lon as BigInt:", { 
+                        latBigInt: BigInt(latFelt).toString(),
+                        lonBigInt: BigInt(lonFelt).toString()
+                    });
 
-                // Reconstruct u256 from low and high parts
-                const reconstructU256 = (low: string, high: string) => {
-                    const lowBig = BigInt(low);
-                    const highBig = BigInt(high);
-                    return (highBig << 128n) | lowBig;
-                };
+                    // Reconstruct u256 from low and high parts
+                    const reconstructU256 = (low: string, high: string) => {
+                        const lowBig = BigInt(low);
+                        const highBig = BigInt(high);
+                        return (highBig << 128n) | lowBig;
+                    };
 
-                /* felt → helpers */
-                const rec = {
-                    address: toHex(addrFelt),
-                    name: feltToShortString(nameFelt),
-                    tags0: reconstructU256(tags0Low, tags0High).toString(),
-                    tags1: reconstructU256(tags1Low, tags1High).toString(),
-                    tags2: reconstructU256(tags2Low, tags2High).toString(),
-                    tags3: reconstructU256(tags3Low, tags3High).toString(),
-                    location: {
-                        x: feltToDeg(BigInt(latFelt)),
-                        y: feltToDeg(BigInt(lonFelt)),
-                    },
-                    pubkey_hi: BigInt(pubkeyHi).toString(),
-                    pubkey_lo: BigInt(pubkeyLo).toString(),
-                };
-                log.info("Converted coordinates:", {
-                    x: rec.location.x,
-                    y: rec.location.y
-                });
+                    /* felt → helpers */
+                    const rec = {
+                        address: toHex(addrFelt),
+                        name: feltToShortString(nameFelt),
+                        tags0: reconstructU256(tags0Low, tags0High).toString(),
+                        tags1: reconstructU256(tags1Low, tags1High).toString(),
+                        tags2: reconstructU256(tags2Low, tags2High).toString(),
+                        tags3: reconstructU256(tags3Low, tags3High).toString(),
+                        location: {
+                            x: feltToDeg(BigInt(latFelt)),
+                            y: feltToDeg(BigInt(lonFelt)),
+                        },
+                        pubkey_hi: BigInt(pubkeyHi).toString(),
+                        pubkey_lo: BigInt(pubkeyLo).toString(),
+                    };
+                    log.info("Converted coordinates:", {
+                        x: rec.location.x,
+                        y: rec.location.y
+                    });
 
-                /* UPSERT (Drizzle .onConflictDoUpdate) */ // :contentReference[oaicite:3]{index=3}
-                await db
-                    .insert(profiles)
-                    .values(rec)
-                    .onConflictDoUpdate({ target: profiles.address, set: rec });
+                    /* UPSERT (Drizzle .onConflictDoUpdate) */ // :contentReference[oaicite:3]{index=3}
+                    await db
+                        .insert(profiles)
+                        .values(rec)
+                        .onConflictDoUpdate({ target: profiles.address, set: rec });
+                } else if (ev.keys[0] === MESSAGE_SENT) {
+                    const [sender, recipient, ...msgArr] = ev.data;
+                    // Convert Array<felt252> to hex string
+                    const message = msgArr.map(felt => BigInt(felt).toString(16).padStart(62, "0")).join("");
+                    await db.insert(messages).values({
+                        id: `${block.header.blockNumber}-${ev.transactionHash}`,
+                        sender: toHex(sender),
+                        recipient: toHex(recipient),
+                        message,
+                        block_number: block.header.blockNumber,
+                        tx_hash: ev.transactionHash,
+                        timestamp: block.header.timestamp,
+                    });
+                }
             }
 
             log.info(

@@ -36,3 +36,16 @@ export const profiles = pgTable(
     },
     (t) => [index("spatial_index").using("gist", t.location)],
 );
+
+export const messages = pgTable(
+    "messages",
+    {
+        id: text("id").primaryKey(), // could be a hash or uuid
+        sender: text("sender").notNull(),
+        recipient: text("recipient").notNull(),
+        message: text("message").notNull(), // store as hex or utf8 string
+        block_number: numeric("block_number", { precision: 78, scale: 0 }),
+        tx_hash: text("tx_hash"),
+        timestamp: numeric("timestamp", { precision: 78, scale: 0 }),
+    }
+);

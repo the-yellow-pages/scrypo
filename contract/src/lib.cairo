@@ -22,6 +22,8 @@ pub trait IProfileRegistry<TContractState> {
     );
     /// Read a stored profile.
     fn get_profile(self: @TContractState, addr: ContractAddress) -> user_profile::Profile;
+    /// Send a message to another user
+    fn send_msg(ref self: TContractState, recipient: ContractAddress, msg: Array<felt252>);
 }
 
 #[starknet::contract]
@@ -29,6 +31,7 @@ mod user_profile {
     use starknet::{ContractAddress, get_caller_address};
     use starknet::storage::{StorageMapWriteAccess, StorageMapReadAccess, Map};
     use core::integer::u256;
+    use core::array::ArrayTrait;
 
     /// Persistent storage layout.
     #[storage]
@@ -59,6 +62,7 @@ mod user_profile {
     #[derive(Drop, starknet::Event)]
     pub enum Event {
         ProfileUpdated: ProfileUpdated,
+        MessageSent: MessageSent,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -73,6 +77,13 @@ mod user_profile {
         longitude: felt252,
         pubkey_hi: felt252,
         pubkey_lo: felt252,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct MessageSent {
+        sender: ContractAddress,
+        recipient: ContractAddress,
+        message: Array<felt252>,
     }
 
     /// ABI implementation exposing the public interface.
@@ -127,6 +138,24 @@ mod user_profile {
         /// View function to fetch a profile by address.
         fn get_profile(self: @ContractState, addr: ContractAddress) -> Profile {
             self.profiles.read(addr)
+        }
+
+        /// Send a message to another user
+        fn send_msg(
+            ref self: ContractState,
+            recipient: ContractAddress,
+            msg: Array<felt252>,
+        ) {
+            let sender = get_caller_address();
+            
+            // Emit message sent event
+            self.emit(
+                MessageSent {
+                    sender,
+                    recipient,
+                    message: msg,
+                },
+            );
         }
     }
 }
