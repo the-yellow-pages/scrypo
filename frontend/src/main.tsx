@@ -7,6 +7,7 @@ import { WebWalletConnector } from 'starknetkit/webwallet';
 import { mainnet, sepolia } from '@starknet-react/chains';
 import type { Connector } from 'starknetkit';
 import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './components/AuthProvider.tsx';
 
 const connectors = [
   argent(),
@@ -24,7 +25,9 @@ createRoot(document.getElementById('root')!).render(
         connectors={connectors as Connector[]}
         explorer={voyager}
       >
-        <App />
+        <AuthProvider>
+          <App />
+        </AuthProvider>
       </StarknetConfig>
     </BrowserRouter>
   </StrictMode>,
