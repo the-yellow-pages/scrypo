@@ -5,6 +5,7 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import Maps from './pages/Map/Map';
 import Profile from './pages/Profile/Profile';
 import ProfileDeploy from './pages/Profile/ProfileDeploy';
+import Pings from './pages/Pings/Pings';
 
 function App() {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ function App() {
           <Route path="/profile/:address" element={<Profile />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/deploy" element={<ProfileDeploy />} />
+          <Route path="/pings" element={<Pings />} />
         </Routes>
       </main>
       <nav className="navbar">
@@ -30,6 +32,7 @@ function App() {
         <div className="navbar-bottom">
           <button className="navbar-button" onClick={() => navigate('/map')}>Map</button>
           <button className="navbar-button" onClick={() => navigate('/profile')}>Profile</button>
+          <button className="navbar-button" onClick={() => navigate('/pings')}>Pings</button>
         </div>
       </nav>
     </div>

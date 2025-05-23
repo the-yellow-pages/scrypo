@@ -46,3 +46,19 @@ export interface ErrorResponse {
 export interface SuccessResponse {
     message: string;
 }
+
+export interface MessageResponse {
+    id: string;
+    sender: string;
+    recipient: string;
+    message: string;
+    block_number: string | null;
+    tx_hash: string | null;
+    timestamp: string | null;
+}
+
+export interface SendMessageRequestBody {
+    sender: string;
+    recipient: string;
+    message: string;
+}

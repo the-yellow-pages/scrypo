@@ -112,13 +112,14 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
                     const message = msgArr.map(felt => BigInt(felt).toString(16).padStart(62, "0")).join("");
                     const recMessage = {
                         id: `${block.header.blockNumber}-${ev.transactionHash}`,
-                        sender: toHex(sender),
-                        recipient: toHex(recipient),
+                        sender: sender,
+                        recipient: recipient,
                         message,
                         block_number: block.header.blockNumber.toString(),
                         tx_hash: ev.transactionHash,
                         timestamp: (block.header.timestamp.getTime() / 1000).toString(),
                     }
+                    log.info("msg:", recMessage);
                     await db.insert(messages).values(
                         recMessage,
                     );

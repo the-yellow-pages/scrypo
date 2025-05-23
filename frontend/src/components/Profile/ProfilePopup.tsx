@@ -64,6 +64,7 @@ export const ProfilePopup: React.FC<ProfilePopupProps> = ({
             const encryptedMsg = await encrypt(message, recipientPubKey);
             
             // Convert encrypted message to felt array
+            // todo : use a more efficient way to convert to felt array
             const msgFelts = Array.from(encryptedMsg).map(byte => byte.toString());
 
             // Send transaction

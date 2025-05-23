@@ -13,8 +13,6 @@ interface ProfileDeployFormProps {
   contractAddress: `0x${string}`
   existingProfile?: ProfileResponse | null
   onSuccess?: () => void
-  publicKey?: string
-  handleGenerateKeys?: () => Promise<void>
 }
 
 const ProfileDeployForm = ({
@@ -22,8 +20,6 @@ const ProfileDeployForm = ({
   contractAddress,
   existingProfile,
   onSuccess,
-  publicKey,
-  handleGenerateKeys
 }: ProfileDeployFormProps) => {
   const { account } = useAccount()
   const [lastTxStatus, setLastTxStatus] = useState("idle")
@@ -63,40 +59,23 @@ const ProfileDeployForm = ({
       e.preventDefault()
       setLastTxStatus("approve")
 
-      // Generate keys if needed and not already provided
-      let pubkeyHi = "0x0"
-      let pubkeyLo = "0x0"
-
-      if (publicKey) {
-        // Use provided public key
-        try {
-          [pubkeyHi, pubkeyLo] = pubToFelts(Buffer.from(publicKey, 'hex'))
-        } catch (convError) {
-          console.error("Error converting provided public key to felts:", convError)
-          throw convError
-        }
-      } else if (handleGenerateKeys) {
-        // Use the provided key generation function
-        await handleGenerateKeys()
-      } else {
-        // Generate keys internally
-        console.log("Starting key generation...")
-        const { publicKey: newPublicKey } = await generateKeys()
-        console.log("Generated public key:", newPublicKey)
+      // Always generate new keys
+      console.log("Starting key generation...")
+      const { publicKey: newPublicKey } = await generateKeys()
+      console.log("Generated public key:", newPublicKey)
+      
+      let pubkeyHi: string, pubkeyLo: string;
+      try {
+        [pubkeyHi, pubkeyLo] = pubToFelts(newPublicKey)
+        console.log("Converted to felts:", { pubkeyHi, pubkeyLo })
         
-        try {
-          [pubkeyHi, pubkeyLo] = pubToFelts(newPublicKey)
-          console.log("Converted to felts:", { pubkeyHi, pubkeyLo })
-        } catch (convError) {
-          console.error("Error converting public key to felts:", convError)
-          throw convError
+        // Ensure keys are not zero
+        if (pubkeyHi === "0x0" || pubkeyLo === "0x0") {
+          throw new Error("Generated keys cannot be zero")
         }
-      }
-
-      // Use existing pubkey if available and no new key was generated
-      if (existingProfile && pubkeyHi === "0x0" && existingProfile.pubkey_hi) {
-        pubkeyHi = existingProfile.pubkey_hi
-        pubkeyLo = existingProfile.pubkey_lo || "0x0"
+      } catch (convError) {
+        console.error("Error converting public key to felts:", convError)
+        throw convError
       }
 
       if (!contract || !account?.address) {
@@ -195,25 +174,6 @@ const ProfileDeployForm = ({
           step="0.000001"
         />
       </div>
-
-      {handleGenerateKeys && (
-        <Button 
-          onClick={handleGenerateKeys}
-          disabled={buttonsDisabled}
-          hideChevron
-        >
-          Generate Keys for Messaging
-        </Button>
-      )}
-
-      {publicKey && (
-        <div className="mt-2 p-2 bg-gray-100 rounded">
-          <p className="font-bold">Generated Public Key:</p>
-          <code className="block p-2 bg-gray-200 rounded break-all text-sm">
-            {publicKey}
-          </code>
-        </div>
-      )}
 
       <Button
         className="w-full"
