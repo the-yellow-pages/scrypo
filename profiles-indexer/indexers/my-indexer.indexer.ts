@@ -5,7 +5,7 @@ import { drizzle } from "@apibara/plugin-drizzle";
 import { StarknetStream, getSelector } from "@apibara/starknet";
 import type { ApibaraRuntimeConfig } from "apibara/types";
 import * as schema from "../lib/schema";
-import { profiles } from "../lib/schema";
+import { profiles, messages } from "../lib/schema";
 import { feltToDeg } from "../../frontend/src/helpers/cords";
 
 export default function (runtimeConfig: ApibaraRuntimeConfig) {
@@ -69,7 +69,7 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
 
                     log.info("Raw event data:", ev.data);
                     log.info("Raw lat/lon:", { latFelt, lonFelt });
-                    log.info("Lat/lon as BigInt:", { 
+                    log.info("Lat/lon as BigInt:", {
                         latBigInt: BigInt(latFelt).toString(),
                         lonBigInt: BigInt(lonFelt).toString()
                     });
@@ -110,15 +110,18 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
                     const [sender, recipient, ...msgArr] = ev.data;
                     // Convert Array<felt252> to hex string
                     const message = msgArr.map(felt => BigInt(felt).toString(16).padStart(62, "0")).join("");
-                    await db.insert(messages).values({
+                    const recMessage = {
                         id: `${block.header.blockNumber}-${ev.transactionHash}`,
                         sender: toHex(sender),
                         recipient: toHex(recipient),
                         message,
-                        block_number: block.header.blockNumber,
+                        block_number: block.header.blockNumber.toString(),
                         tx_hash: ev.transactionHash,
-                        timestamp: block.header.timestamp,
-                    });
+                        timestamp: (block.header.timestamp.getTime() / 1000).toString(),
+                    }
+                    await db.insert(messages).values(
+                        recMessage,
+                    );
                 }
             }
 

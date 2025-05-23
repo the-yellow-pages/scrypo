@@ -8,5 +8,10 @@ export default defineConfig({
             startingBlock: Number(process.env.START_BLOCK ?? 0),
             contractAddress: process.env.CONTRACT_ADDRESS!,
         },
+        messages: {
+            streamUrl: process.env.STREAM_URL!,
+            startingBlock: Number(process.env.START_BLOCK ?? 0),
+            contractAddress: process.env.CONTRACT_ADDRESS!,
+        }
     },
 });
