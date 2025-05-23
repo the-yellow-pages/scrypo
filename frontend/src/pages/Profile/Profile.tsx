@@ -1,30 +1,24 @@
 import { SendERC20 } from 'components/Transactions/ERC20';
-import { useState, useEffect, useCallback } from 'react'; // Added useCallback
-import { useUserKeyGenerator } from 'msg/UserKeyGenerator';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getProfileByAddress } from '../../api/profiles';
 import { type ProfileResponse, type ErrorResponse } from '../../api/types';
 import { useAccount } from "@starknet-react/core";
+import { Button } from 'components/Button';
 
-// --- Import Helper Sub-components ---
+// Import Helper Sub-components
 import LoadingIndicator from './components/LoadingIndicator';
 import FetchErrorMessage from './components/FetchErrorMessage';
 import FetchedProfileDisplay from './components/FetchedProfileDisplay';
-import ProfileSetupForm from './components/ProfileSetupForm';
 import ProfileNotFoundMessage from './components/ProfileNotFoundMessage';
 import ConnectWalletPromptMessage from './components/ConnectWalletPromptMessage';
-import ProfilePageFallback from './components/ProfilePageFallback';
-import { ProfileDeployForm } from '../../components/Profile/ProfileDeployForm';
-
 
 function Profile() {
     const [lastTxError, setLastTxError] = useState("");
-    const [publicKey, setPublicKey] = useState<string>("");
-    const { generateKeys } = useUserKeyGenerator();
-
     const [profileData, setProfileData] = useState<ProfileResponse | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [fetchError, setFetchError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     const { address: addressFromUrl } = useParams<{ address?: string }>();
     const { address: connectedUserAddress, isConnected } = useAccount();
@@ -43,7 +37,6 @@ function Profile() {
             setFetchError(null);
             getProfileByAddress(targetAddress)
                 .then(response => {
-                    // Type guard for ErrorResponse based on 'details'
                     if (response && typeof response === 'object' && 'error' in response) {
                         const errorResponse = response as ErrorResponse;
                         const detailsString = String(errorResponse.error);
@@ -52,7 +45,6 @@ function Profile() {
                         } else {
                             setFetchError(detailsString || "Failed to fetch profile data.");
                         }
-                        // Type guard for ProfileResponse based on 'address' (assuming it's a unique key for profiles)
                     } else if (response && typeof response === 'object' && 'address' in response) {
                         setProfileData(response as ProfileResponse);
                     } else {
@@ -68,93 +60,69 @@ function Profile() {
                 .finally(() => {
                     setIsLoading(false);
                 });
-        } else {
-            setProfileData(null);
-            setIsLoading(false);
-            setFetchError(null); // Clear fetch error if no targetAddress
         }
-        console.log(isConnected, targetAddress, connectedUserAddress, profileData);
-        console.log("Address from URL:", addressFromUrl);
     }, [targetAddress]);
-
-    const handleGenerateKeys = useCallback(async () => { // useCallback for stable prop
-        try {
-            console.log('Starting key generation...');
-            const { publicKey: newPublicKey } = await generateKeys();
-            console.log('Received public key:', newPublicKey);
-            if (!newPublicKey || newPublicKey.length === 0) {
-                throw new Error('Generated public key is empty');
-            }
-            const hexKey = Array.from(newPublicKey).map(b => b.toString(16).padStart(2, '0')).join('');
-            console.log('Converted to hex:', hexKey);
-            setPublicKey(hexKey);
-        } catch (error) {
-            console.error('Key generation error:', error);
-            setLastTxError(error instanceof Error ? error.message : "Failed to generate keys");
-        }
-    }, [generateKeys]); // Added generateKeys to dependency array
 
     if (isLoading) {
         return <LoadingIndicator />;
     }
 
     if (fetchError) {
-        // Don't show setup form if there was a fetch error, even for own profile
         return <FetchErrorMessage error={fetchError} />;
     }
 
-    // Case 1: Displaying a fetched profile
-    if (profileData && targetAddress) {
-        return <FetchedProfileDisplay 
-            profileData={profileData} 
-            isOwnProfile={targetAddress === connectedUserAddress} 
-            profilesContractAddress={profilesContractAddress}
-        />;
-    }
-
-    // Case 2: Connected user's profile doesn't exist (and no fetch error), show setup UI
-    if (isConnected && targetAddress === connectedUserAddress && !profileData) {
-        return (
-            <div className="p-4">
-                <h2 className="text-2xl font-bold mb-4">Set Up Your Profile</h2>
-                <p className="mb-4">Your profile is not yet deployed. Complete the form below to create it.</p>
-                {connectedUserAddress && <p className="mb-4">Connected as: {connectedUserAddress}</p>}
-                
-                <div className="bg-white p-4 rounded-lg shadow mb-4">
-                    <ProfileDeployForm
-                        setLastTxError={setLastTxError}
-                        contractAddress={profilesContractAddress as `0x${string}`}
-                        publicKey={publicKey}
-                        handleGenerateKeys={handleGenerateKeys}
-                    />
-                </div>
-                
-                {lastTxError && (
-                    <div className="error-message p-4 bg-red-100 border border-red-400 rounded mb-4">
-                        <p>Error: {lastTxError}</p>
-                    </div>
-                )}
-                
-                <div className="mt-6">
-                    <h3 className="text-lg font-semibold mb-2">Send Tokens</h3>
-                    <SendERC20 setLastTxError={setLastTxError} />
-                </div>
-            </div>
-        );
-    }
-
-    // Case 3: Viewing someone else's profile (via URL) and it doesn't exist (and no fetch error)
-    if (addressFromUrl && targetAddress === addressFromUrl && !profileData) {
-        return <ProfileNotFoundMessage address={addressFromUrl} />;
-    }
-
-    // Case 4: Not connected and no specific address in URL to view
     if (!isConnected && !addressFromUrl) {
         return <ConnectWalletPromptMessage />;
     }
 
-    // Fallback for any other unhandled state
-    return <ProfilePageFallback />;
+    const isOwnProfile = targetAddress === connectedUserAddress;
+
+    return (
+        <div className="p-4">
+            {lastTxError && (
+                <div className="error-message p-4 bg-red-100 border border-red-400 rounded mb-4">
+                    <p>Error: {lastTxError}</p>
+                </div>
+            )}
+
+            {/* Profile Data Section */}
+            {profileData ? (
+                <div className="bg-white p-4 rounded-lg shadow mb-4">
+                    <FetchedProfileDisplay 
+                        profileData={profileData} 
+                        isOwnProfile={isOwnProfile} 
+                        profilesContractAddress={profilesContractAddress}
+                    />
+                </div>
+            ) : addressFromUrl ? (
+                <ProfileNotFoundMessage address={addressFromUrl} />
+            ) : null}
+
+            {/* Actions Section - Always visible for own profile */}
+            {isOwnProfile && (
+                <div className="mt-4">
+                    {/* Profile Action Button */}
+                    <div className="bg-white p-4 rounded-lg shadow mb-4">
+                        <Button
+                            onClick={() => navigate('/profile/deploy', { 
+                                state: { profile: profileData } 
+                            })}
+                            className="w-full"
+                            hideChevron
+                        >
+                            {profileData ? 'Edit Profile' : 'Create Profile'}
+                        </Button>
+                    </div>
+
+                    {/* Token Transfer Section */}
+                    <div className="bg-white p-4 rounded-lg shadow">
+                        <h3 className="text-lg font-semibold mb-2">Send Tokens</h3>
+                        <SendERC20 setLastTxError={setLastTxError} />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }
 
 export default Profile;

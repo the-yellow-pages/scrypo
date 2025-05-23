@@ -3,10 +3,12 @@ import Map, { Marker, type MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { getAllProfiles, getProfilesWithinArea } from '../../api/profiles';
 import type { ProfileResponse } from '../../api/types';
-
+import { Link } from 'react-router-dom';
+import { ProfilePopup } from '../../components/Profile/ProfilePopup';
 
 const Maps = () => {
     const mapRef = React.useRef<MapRef>(null);
+    const [selectedProfile, setSelectedProfile] = React.useState<ProfileResponse | null>(null);
 
     const [viewport, setViewport] = React.useState<{
         latitude: number;
@@ -29,6 +31,7 @@ const Maps = () => {
     const [fetchMode, setFetchMode] = React.useState<'all' | 'area'>('all');
 
     const mapboxAPIToken = "pk.eyJ1Ijoic3RldmVuZHNheWxvciIsImEiOiJja295ZmxndGEwbGxvMm5xdTc3M2MwZ2xkIn0.WDBLMZYfh-ZGFjmwO82xvw";
+    const profilesContractAddress = import.meta.env.VITE_PROFILES_CONTRACT_ADDRESS;
 
     // Fetch all profiles on mount
     React.useEffect(() => {
@@ -44,7 +47,8 @@ const Maps = () => {
         })();
     }, []);
 
-    const markerOnClick = (coord: { latitude: number; longitude: number }) => {
+    const markerOnClick = (profile: ProfileResponse) => {
+        const coord = profileToCoord(profile);
         // Center the map on the clicked marker
         if (mapRef.current) {
             const bounds = mapRef.current.getBounds();
@@ -64,11 +68,11 @@ const Maps = () => {
             console.log('bounds', bounds);
             const options = {
                 center: { lng: coord.longitude, lat: coord.latitude },
-
             }
-            mapRef.current.fitBounds(bounds, options,);
+            mapRef.current.fitBounds(bounds, options);
         }
-        setSelectedCoord(coord)
+        setSelectedCoord(coord);
+        setSelectedProfile(profile);
     }
 
     // Convert profile location to map coordinates
@@ -139,7 +143,7 @@ const Maps = () => {
                     return (
                         <Marker key={profile.address || index} latitude={coord.latitude} longitude={coord.longitude}>
                             <div
-                                onClick={() => markerOnClick(coord)}
+                                onClick={() => markerOnClick(profile)}
                                 style={{
                                     backgroundColor:
                                         selectedCoord?.latitude === coord.latitude && selectedCoord?.longitude === coord.longitude
@@ -155,6 +159,19 @@ const Maps = () => {
                         </Marker>
                     );
                 })}
+
+                {selectedProfile && selectedCoord && profilesContractAddress && (
+                    <ProfilePopup
+                        profile={selectedProfile}
+                        latitude={selectedCoord.latitude}
+                        longitude={selectedCoord.longitude}
+                        onClose={() => {
+                            setSelectedProfile(null);
+                            setSelectedCoord(null);
+                        }}
+                        contractAddress={profilesContractAddress}
+                    />
+                )}
             </Map>
             <div style={{ marginTop: '1rem' }}>
                 <h3>Profiles List</h3>

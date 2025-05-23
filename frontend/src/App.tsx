@@ -4,6 +4,7 @@ import { WalletConnectorModal } from './WalletConnectorModal';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import Maps from './pages/Map/Map';
 import Profile from './pages/Profile/Profile';
+import ProfileDeploy from './pages/Profile/ProfileDeploy';
 
 function App() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ function App() {
           <Route path="/map" element={<Maps />} />
           <Route path="/profile/:address" element={<Profile />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/deploy" element={<ProfileDeploy />} />
         </Routes>
       </main>
       <nav className="navbar">

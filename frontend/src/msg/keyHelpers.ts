@@ -25,6 +25,26 @@ export function pubToFelts(pub: Uint8Array): [string, string] {
     return [hi.toString(), lo.toString()]
 }
 
+/**
+ * Converts two felt252 values (high and low) back to a 32-byte public key
+ * 
+ * @param pubkeyHi high felt as string
+ * @param pubkeyLo low felt as string
+ * @returns 32-byte public key as Uint8Array
+ */
+export function feltsToPub(pubkeyHi: string, pubkeyLo: string): Uint8Array {
+    const recipientPubKey = new Uint8Array(32);
+    const hiBytes = BigInt(pubkeyHi).toString(16).padStart(32, '0');
+    const loBytes = BigInt(pubkeyLo).toString(16).padStart(32, '0');
+    
+    for (let i = 0; i < 16; i++) {
+        recipientPubKey[i] = parseInt(hiBytes.slice(i * 2, (i + 1) * 2), 16);
+        recipientPubKey[i + 16] = parseInt(loBytes.slice(i * 2, (i + 1) * 2), 16);
+    }
+    
+    return recipientPubKey;
+}
+
 /*  install                                       *
  *  npm i libsodium-wrappers @noble/hashes        */
 // import { keccak_256 } from '@noble/hashes/sha3';
