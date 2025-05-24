@@ -232,7 +232,7 @@ export const getProfilesWithinArea = async (
             .select()
             .from(schema.profiles)
             .where(
-                sql`ST_Within(${schema.profiles.location}, ST_MakeEnvelope(${nX1}, ${nY1}, ${nX2}, ${nY2}, 4326))`,
+                sql`ST_Within(ST_SetSRID(${schema.profiles.location}, 4326), ST_MakeEnvelope(${nX1}, ${nY1}, ${nX2}, ${nY2}, 4326))`,
             );
 
         res.status(200).json(profilesInArea);

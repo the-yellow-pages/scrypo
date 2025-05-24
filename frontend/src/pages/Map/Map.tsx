@@ -1,9 +1,9 @@
 import React from 'react';
 import Map, { Marker, type MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { getAllProfiles, getProfilesWithinArea } from '../../api/profiles';
+import { getProfilesWithinArea } from '../../api/profiles';
 import type { ProfileResponse } from '../../api/types';
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom';
 import { ProfilePopup } from '../../components/Profile/ProfilePopup';
 
 const Maps = () => {
@@ -28,24 +28,18 @@ const Maps = () => {
 
     const [profiles, setProfiles] = React.useState<ProfileResponse[]>([]);
     const [loading, setLoading] = React.useState(true);
-    const [fetchMode, setFetchMode] = React.useState<'all' | 'area'>('all');
 
     const mapboxAPIToken = "pk.eyJ1Ijoic3RldmVuZHNheWxvciIsImEiOiJja295ZmxndGEwbGxvMm5xdTc3M2MwZ2xkIn0.WDBLMZYfh-ZGFjmwO82xvw";
     const profilesContractAddress = import.meta.env.VITE_PROFILES_CONTRACT_ADDRESS;
 
-    // Fetch all profiles on mount
+    // Debounced fetch on map move
     React.useEffect(() => {
-        (async () => {
-            setLoading(true);
-            const res = await getAllProfiles();
-            if (Array.isArray(res)) {
-                setProfiles(res);
-            } else {
-                setProfiles([]);
-            }
-            setLoading(false);
-        })();
-    }, []);
+        const timeoutId = setTimeout(() => {
+            fetchProfilesWithinArea();
+        }, 500); // 500ms delay
+
+        return () => clearTimeout(timeoutId);
+    }, [viewport.latitude, viewport.longitude, viewport.zoom]);
 
     const markerOnClick = (profile: ProfileResponse) => {
         const coord = profileToCoord(profile);
@@ -91,20 +85,7 @@ const Maps = () => {
         const x2 = bounds._ne.lng;
         const y2 = bounds._ne.lat;
         setLoading(true);
-        setFetchMode('area');
         const res = await getProfilesWithinArea(x1, y1, x2, y2);
-        if (Array.isArray(res)) {
-            setProfiles(res);
-        } else {
-            setProfiles([]);
-        }
-        setLoading(false);
-    };
-
-    const fetchAllProfiles = async () => {
-        setLoading(true);
-        setFetchMode('all');
-        const res = await getAllProfiles();
         if (Array.isArray(res)) {
             setProfiles(res);
         } else {
@@ -123,12 +104,9 @@ const Maps = () => {
                 )}
             </div>
             <div style={{ margin: '0.5rem 0' }}>
-                <button onClick={fetchAllProfiles} disabled={loading || fetchMode === 'all'}>
-                    Fetch All Profiles
-                </button>
-                <button onClick={fetchProfilesWithinArea} disabled={loading || fetchMode === 'area'} style={{ marginLeft: '1rem' }}>
+                {/* <button onClick={fetchProfilesWithinArea} disabled={loading} style={{ marginLeft: '1rem' }}>
                     Fetch Profiles Within Area
-                </button>
+                </button> */}
             </div>
             <Map
                 {...viewport}
