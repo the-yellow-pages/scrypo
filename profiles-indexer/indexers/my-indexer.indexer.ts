@@ -114,6 +114,7 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
                     const [sender, recipient, ...msgArr] = ev.data;
                     // Convert hex strings to bigints, then to Uint8Array, then to Buffer
                     const msgBigints = msgArr.map(x => BigInt(x));
+                    console.log("input felts:", msgBigints);
                     const message = feltsToUint8Array(msgBigints);
                     // const message = Buffer.from(messageArray);
                     const recMessage = {

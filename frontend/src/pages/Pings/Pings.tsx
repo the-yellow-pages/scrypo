@@ -6,13 +6,35 @@ import { type ErrorResponse } from '../../api/types';
 // Import Helper Components from Profile since we'll use similar patterns
 import LoadingIndicator from '../Profile/components/LoadingIndicator';
 import ConnectWalletPromptMessage from '../Profile/components/ConnectWalletPromptMessage';
+import { decrypt } from "../../msg/keyHelpers.ts";
+import { useUserKeyGenerator } from "../../msg/UserKeyGenerator";
 
 function Pings() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const [keys, setKeys] = useState<{ publicKey: Uint8Array; privateKey: Uint8Array } | null>(null);
     
-    const { address: connectedUserAddress, isConnected } = useAccount();
+    const { address: connectedUserAddress, isConnected, account } = useAccount();
+    const { generateKeys } = useUserKeyGenerator();
+
+    // Generate keys when component mounts and user is connected
+    useEffect(() => {
+        const initKeys = async () => {
+            if (isConnected && account && !keys) {
+                try {
+                    console.log('Generating keys with account:', account);
+                    const generatedKeys = await generateKeys();
+                    console.log('Keys generated successfully');
+                    setKeys(generatedKeys);
+                } catch (err) {
+                    console.error('Failed to generate keys:', err);
+                    setError('Failed to generate encryption keys');
+                }
+            }
+        };
+        initKeys();
+    }, [isConnected, account, keys, generateKeys]);
 
     useEffect(() => {
         if (connectedUserAddress) {
@@ -39,6 +61,18 @@ function Pings() {
                 });
         }
     }, [connectedUserAddress]);
+
+    const decryptMessage = async (content: Uint8Array): Promise<string> => {
+        if (!keys) {
+            throw new Error('Encryption keys not available');
+        }
+        try {
+            return await decrypt(content, keys.publicKey, keys.privateKey);
+        } catch (err) {
+            console.error('Failed to decrypt message:', err);
+            return '[Decryption failed]';
+        }
+    };
 
     if (!isConnected) {
         return <ConnectWalletPromptMessage />;
@@ -69,17 +103,36 @@ function Pings() {
                                 <span className="text-sm text-gray-500">
                                     From: {message.sender}
                                 </span>
-                                {/*<span className="text-xs text-gray-400">*/}
-                                {/*    {new Date(message.timestamp).toLocaleString()}*/}
-                                {/*</span>*/}
                             </div>
-                            <p className="text-gray-800"> cont: {message.content}</p>
+                            <p className="text-gray-800">
+                                {keys ? (
+                                    <DecryptedMessage content={message.message} decryptFn={decryptMessage} />
+                                ) : (
+                                    'Loading decryption keys...'
+                                )}
+                            </p>
                         </div>
                     ))}
                 </div>
             )}
         </div>
     );
+}
+
+// Separate component to handle async decryption
+function DecryptedMessage({ content, decryptFn }: { content: Uint8Array, decryptFn: (content: Uint8Array) => Promise<string> }) {
+    const [decryptedContent, setDecryptedContent] = useState<string>('Decrypting...');
+
+    useEffect(() => {
+        decryptFn(content)
+            .then(setDecryptedContent)
+            .catch(err => {
+                console.error('Decryption error:', err);
+                setDecryptedContent('[Decryption failed]');
+            });
+    }, [content]);
+
+    return <>{decryptedContent}</>;
 }
 
 export default Pings; 

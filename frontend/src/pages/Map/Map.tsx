@@ -73,10 +73,10 @@ const Maps = () => {
 
     const markerOnClick = (profile: ProfileResponse) => {
         // Don't allow clicking on own marker
-        if (addressesEqual(profile.address, connectedUserAddress)) {
-            console.log('Clicked on own marker, ignoring');
-            return;
-        }
+        // if (addressesEqual(profile.address, connectedUserAddress)) {
+        //     console.log('Clicked on own marker, ignoring');
+        //     return;
+        // }
 
         const coord = profileToCoord(profile);
         // Center the map on the clicked marker

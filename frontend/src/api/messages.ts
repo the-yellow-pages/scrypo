@@ -4,7 +4,7 @@ export interface Message {
   id: string;
   sender: string;
   recipient: string;
-  content: string;
+  message: Uint8Array; // Encrypted message content
   timestamp: string;
 }
 
@@ -14,10 +14,19 @@ export const getMessagesByRecipient = async (address: string): Promise<Message[]
   try {
     const response = await fetch(`${API_BASE_URL}/messages/recipient/${address}`);
     const data = await response.json();
+    console.log("Raw message data:", data);
+    
     if (!response.ok) {
       return { error: data.error || 'Failed to fetch messages' };
     }
-    return data;
+
+    // Convert the message data to proper Uint8Array format
+    const messages = data.map((msg: any) => ({
+      ...msg,
+      message: new Uint8Array(Object.values(msg.message))
+    }));
+
+    return messages;
   } catch (error) {
     console.error('Error fetching messages:', error);
     return { error: `Failed to fetch messages` };

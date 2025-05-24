@@ -5,7 +5,7 @@ import { Button } from '../Button';
 import { useContract, useSendTransaction } from "@starknet-react/core";
 import { profileRegistryAbi } from "abi/profileRegistryAbi";
 import { CallData } from "starknet";
-import { encrypt, feltsToPub, uint8ArrayToFelts } from "msg/keyHelpers";
+import {encrypt, feltsToPub, feltsToUint8Array, uint8ArrayToFelts} from "msg/keyHelpers";
 import type { ProfileResponse } from '../../api/types';
 
 // Helper function to truncate address
@@ -62,11 +62,13 @@ export const ProfilePopup: React.FC<ProfilePopupProps> = ({
 
             // Encrypt the message
             const encryptedMsg: Uint8Array = await encrypt(message, recipientPubKey);
+            console.log("encrypted msg: ", encryptedMsg);
             // Convert encrypted message to felt array
             // todo : use a more efficient way to convert to felt array
             // const msgFelts = Array.from(encryptedMsg).map(byte => byte.toString());
             const msgFelts = uint8ArrayToFelts(encryptedMsg);
 
+            console.log("send msg: ", msgFelts.map(x => BigInt(x)));
             // Send transaction
             const { transaction_hash } = await sendAsync([{
                 contractAddress: contractAddress as `0x${string}`,
