@@ -5,7 +5,14 @@ import {
     doublePrecision,
     geometry,
     index,
+    customType
 } from "drizzle-orm/pg-core";
+
+const bytea = customType<{ data: Buffer; notNull: true; default: false }>({
+    dataType() {
+        return 'bytea';
+    }
+});
 
 export const profiles = pgTable(
     "profiles",
@@ -43,7 +50,7 @@ export const messages = pgTable(
         id: text("id").primaryKey(), // could be a hash or uuid
         sender: text("sender").notNull(),
         recipient: text("recipient").notNull(),
-        message: text("message").notNull(), // store as hex or utf8 string
+        message: bytea("message").notNull(), // store as binary data for encrypted messages
         block_number: numeric("block_number", { precision: 78, scale: 0 }),
         tx_hash: text("tx_hash"),
         timestamp: numeric("timestamp", { precision: 78, scale: 0 }),

@@ -33,8 +33,8 @@ const validateMessageData = (data: SendMessageRequestBody): string[] => {
   }
 
   // Message validation
-  if (!data.message || typeof data.message !== "string" || data.message.trim() === "") {
-    errors.push("Message content is required and must be a non-empty string.");
+  if (!data.message || !(data.message instanceof Uint8Array) || data.message.length === 0) {
+    errors.push("Message content is required and must be a non-empty Uint8Array.");
   }
 
   return errors;
@@ -56,7 +56,13 @@ export const getMessagesByRecipient = async (
       .from(schema.messages)
       .where(eq(schema.messages.recipient, address));
 
-    res.status(200).json(result);
+    // Convert Buffer to Uint8Array for each message
+    const messages = result.map(msg => ({
+      ...msg,
+      message: new Uint8Array(msg.message as Buffer)
+    }));
+
+    res.status(200).json(messages);
   } catch (error) {
     console.error("Error fetching messages by recipient:", error);
     res.status(500).json({ error: "Failed to fetch messages" });
@@ -79,7 +85,13 @@ export const getMessagesBySender = async (
       .from(schema.messages)
       .where(eq(schema.messages.sender, address));
 
-    res.status(200).json(result);
+    // Convert Buffer to Uint8Array for each message
+    const messages = result.map(msg => ({
+      ...msg,
+      message: new Uint8Array(msg.message as Buffer)
+    }));
+
+    res.status(200).json(messages);
   } catch (error) {
     console.error("Error fetching messages by sender:", error);
     res.status(500).json({ error: "Failed to fetch messages" });

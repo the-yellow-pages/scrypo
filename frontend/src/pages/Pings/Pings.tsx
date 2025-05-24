@@ -22,6 +22,7 @@ function Pings() {
             
             getMessagesByRecipient(connectedUserAddress)
                 .then(response => {
+                    console.log(response);
                     if (response && 'error' in response) {
                         const errorResponse = response as ErrorResponse;
                         setError(errorResponse.error || "Failed to fetch messages.");
@@ -68,11 +69,11 @@ function Pings() {
                                 <span className="text-sm text-gray-500">
                                     From: {message.sender}
                                 </span>
-                                <span className="text-xs text-gray-400">
-                                    {new Date(message.timestamp).toLocaleString()}
-                                </span>
+                                {/*<span className="text-xs text-gray-400">*/}
+                                {/*    {new Date(message.timestamp).toLocaleString()}*/}
+                                {/*</span>*/}
                             </div>
-                            <p className="text-gray-800">{message.content}</p>
+                            <p className="text-gray-800"> cont: {message.content}</p>
                         </div>
                     ))}
                 </div>

@@ -51,7 +51,7 @@ export interface MessageResponse {
     id: string;
     sender: string;
     recipient: string;
-    message: string;
+    message: Uint8Array;
     block_number: string | null;
     tx_hash: string | null;
     timestamp: string | null;
@@ -60,5 +60,5 @@ export interface MessageResponse {
 export interface SendMessageRequestBody {
     sender: string;
     recipient: string;
-    message: string;
+    message: Uint8Array;
 }

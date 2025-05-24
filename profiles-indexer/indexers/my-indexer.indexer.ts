@@ -7,6 +7,7 @@ import type { ApibaraRuntimeConfig } from "apibara/types";
 import * as schema from "../lib/schema";
 import { profiles, messages } from "../lib/schema";
 import { feltToDeg } from "../../frontend/src/helpers/cords";
+import {feltsToUint8Array, uint8ArrayToFelts} from "../../frontend/src/msg/keyHelpers";
 
 export default function (runtimeConfig: ApibaraRuntimeConfig) {
     const { startingBlock, streamUrl, contractAddress } =
@@ -37,7 +38,10 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
         plugins: [
             drizzleStorage({
                 db,
-                idColumn: { profiles: "address" }, // address is already unique
+                idColumn: { 
+                    profiles: "address",
+                    messages: "id"
+                },
                 migrate: { migrationsFolder: "./migrations" }, // auto migrations
                 persistState: true,
             }),
@@ -108,8 +112,10 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
                         .onConflictDoUpdate({ target: profiles.address, set: rec });
                 } else if (ev.keys[0] === MESSAGE_SENT) {
                     const [sender, recipient, ...msgArr] = ev.data;
-                    // Convert Array<felt252> to hex string
-                    const message = msgArr.map(felt => BigInt(felt).toString(16).padStart(62, "0")).join("");
+                    // Convert hex strings to bigints, then to Uint8Array, then to Buffer
+                    const msgBigints = msgArr.map(x => BigInt(x));
+                    const message = feltsToUint8Array(msgBigints);
+                    // const message = Buffer.from(messageArray);
                     const recMessage = {
                         id: `${block.header.blockNumber}-${ev.transactionHash}`,
                         sender: sender,

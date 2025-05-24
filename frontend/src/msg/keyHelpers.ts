@@ -98,3 +98,46 @@ export async function decrypt(
 // Bob opens it
 // const clearText = await decrypt(sealedBox, bobPublicKey, bobPrivateKey);
 // console.log(clearText);   // → "hi Bob – call me at +33 6 12 34 56 78 🤫"
+
+// ---------- packing & unpacking ----------
+/** Split a Uint8Array into 31-byte chunks and pack each chunk into one felt. */
+export function uint8ArrayToFelts(bytes: Uint8Array): bigint[] {
+    const FELT_BASE = 256n;           // 2^8
+    const CHUNK_SIZE = 31;            // bytes per felt (248 bits)
+
+    const felts: bigint[] = [BigInt(bytes.length)]; // Store length in first element
+    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+        const chunk = bytes.subarray(i, i + CHUNK_SIZE);
+        let felt = 0n;
+        for (const b of chunk) felt = (felt << 8n) + BigInt(b);
+        felts.push(felt);               // 0 ≤ felt < 2²⁵¹ guaranteed
+    }
+    return felts;
+}
+
+/**
+ * Rebuild the original Uint8Array from felts.
+ * Pass the original byteLength so that padding zeros added to the last chunk
+ * are trimmed away.
+ */
+export function feltsToUint8Array(felts: readonly bigint[]): Uint8Array {
+    if (felts.length === 0) return new Uint8Array(0);
+    
+    const byteLength = Number(felts[0]); // Get length from first element
+    const dataFelts = felts.slice(1); // Skip the length element
+    
+    const bytes: number[] = [];
+    for (const f of dataFelts) {
+        let felt = BigInt(f);
+        const chunk: number[] = [];
+        // Pull out bytes from the least-significant end.
+        while (felt > 0n) {
+            chunk.unshift(Number(felt & 0xffn));
+            felt >>= 8n;
+        }
+        // Left-pad the chunk to 31 bytes so ordering is preserved.
+        while (chunk.length < 31) chunk.unshift(0);
+        bytes.push(...chunk);
+    }
+    return new Uint8Array(bytes.slice(bytes.length - byteLength));
+}
