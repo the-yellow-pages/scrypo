@@ -138,7 +138,7 @@ Maps on-chain identities to geolocations while preserving privacy, enabling spon
 }
 
 function createTargetAudienceSlide(presentation) {
-    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TWO_COLUMN_TEXT);
+    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TITLE_AND_TWO_COLUMNS);
     const title = slide.getPageElements()[0].asShape();
     const leftColumn = slide.getPageElements()[1].asShape();
     const rightColumn = slide.getPageElements()[2].asShape();
@@ -210,7 +210,7 @@ Growth driver: Network effects in crypto communities`;
 }
 
 function createMarketTrendsSlide(presentation) {
-    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TWO_COLUMN_TEXT);
+    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TITLE_AND_TWO_COLUMNS);
     const title = slide.getPageElements()[0].asShape();
     const leftColumn = slide.getPageElements()[1].asShape();
     const rightColumn = slide.getPageElements()[2].asShape();
@@ -283,7 +283,7 @@ function createArchitectureSlide(presentation) {
 }
 
 function createTechnicalStackSlide(presentation) {
-    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TWO_COLUMN_TEXT);
+    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TITLE_AND_TWO_COLUMNS);
     const title = slide.getPageElements()[0].asShape();
     const leftColumn = slide.getPageElements()[1].asShape();
     const rightColumn = slide.getPageElements()[2].asShape();
@@ -368,7 +368,7 @@ function createCoreFeaturesSlide(presentation) {
 }
 
 function createXMTPSlide(presentation) {
-    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TWO_COLUMN_TEXT);
+    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TITLE_AND_TWO_COLUMNS);
     const title = slide.getPageElements()[0].asShape();
     const leftColumn = slide.getPageElements()[1].asShape();
     const rightColumn = slide.getPageElements()[2].asShape();
@@ -413,7 +413,7 @@ Phase 3: Mobile Optimization
 }
 
 function createMonetizationSlide(presentation) {
-    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TWO_COLUMN_TEXT);
+    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TITLE_AND_TWO_COLUMNS);
     const title = slide.getPageElements()[0].asShape();
     const leftColumn = slide.getPageElements()[1].asShape();
     const rightColumn = slide.getPageElements()[2].asShape();
@@ -456,7 +456,7 @@ function createMonetizationSlide(presentation) {
 }
 
 function createGeoAdvertisingSlide(presentation) {
-    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TWO_COLUMN_TEXT);
+    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TITLE_AND_TWO_COLUMNS);
     const title = slide.getPageElements()[0].asShape();
     const leftColumn = slide.getPageElements()[1].asShape();
     const rightColumn = slide.getPageElements()[2].asShape();
@@ -502,7 +502,7 @@ function createGeoAdvertisingSlide(presentation) {
 }
 
 function createDaaSSlide(presentation) {
-    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TWO_COLUMN_TEXT);
+    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TITLE_AND_TWO_COLUMNS);
     const title = slide.getPageElements()[0].asShape();
     const leftColumn = slide.getPageElements()[1].asShape();
     const rightColumn = slide.getPageElements()[2].asShape();
@@ -533,7 +533,7 @@ function createDaaSSlide(presentation) {
 🔐 Privacy Protection:
 • Hash-based aggregation
 • k-anonymity thresholds (minimum group sizes)
-• No individual wallet tracking
+• On-device data pre-processing
 • GDPR-compliant data handling
 
 💰 Subscription Tiers:
@@ -549,7 +549,7 @@ function createDaaSSlide(presentation) {
 }
 
 function createCompetitiveSlide(presentation) {
-    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TWO_COLUMN_TEXT);
+    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TITLE_AND_TWO_COLUMNS);
     const title = slide.getPageElements()[0].asShape();
     const leftColumn = slide.getPageElements()[1].asShape();
     const rightColumn = slide.getPageElements()[2].asShape();
@@ -593,7 +593,7 @@ Orbis Digital Tribes
 }
 
 function createSWOTSlide(presentation) {
-    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TWO_COLUMN_TEXT);
+    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TITLE_AND_TWO_COLUMNS);
     const title = slide.getPageElements()[0].asShape();
     const leftColumn = slide.getPageElements()[1].asShape();
     const rightColumn = slide.getPageElements()[2].asShape();
@@ -637,7 +637,7 @@ function createSWOTSlide(presentation) {
 }
 
 function createUserAcquisitionSlide(presentation) {
-    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TWO_COLUMN_TEXT);
+    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TITLE_AND_TWO_COLUMNS);
     const title = slide.getPageElements()[0].asShape();
     const leftColumn = slide.getPageElements()[1].asShape();
     const rightColumn = slide.getPageElements()[2].asShape();
@@ -681,7 +681,7 @@ function createUserAcquisitionSlide(presentation) {
 }
 
 function createPrivacySlide(presentation) {
-    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TWO_COLUMN_TEXT);
+    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TITLE_AND_TWO_COLUMNS);
     const title = slide.getPageElements()[0].asShape();
     const leftColumn = slide.getPageElements()[1].asShape();
     const rightColumn = slide.getPageElements()[2].asShape();
@@ -766,7 +766,7 @@ Q1 2026: Monetization Go-Live
 }
 
 function createFinancialSlide(presentation) {
-    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TWO_COLUMN_TEXT);
+    const slide = presentation.appendSlide(SlidesApp.PredefinedLayout.TITLE_AND_TWO_COLUMNS);
     const title = slide.getPageElements()[0].asShape();
     const leftColumn = slide.getPageElements()[1].asShape();
     const rightColumn = slide.getPageElements()[2].asShape();
