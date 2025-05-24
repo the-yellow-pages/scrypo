@@ -6,6 +6,7 @@ import { useUserKeyGenerator } from "msg/UserKeyGenerator"
 import { pubToFelts } from "msg/keyHelpers"
 import { degToFelt } from "helpers/cords"
 import { TagSelector } from "components/Tags/TagSelector"
+import { CitySelector } from "components/Location/CitySelector"
 import { AVAILABLE_TAGS } from "components/Tags/tags"
 import type { ProfileResponse } from "../../api/types"
 import "../../styles/form.css"
@@ -39,6 +40,7 @@ const ProfileDeployForm = ({
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [latitude, setLatitude] = useState("0")
   const [longitude, setLongitude] = useState("0")
+  const [selectedCity, setSelectedCity] = useState("")
 
   // Convert tag IDs to bit flags
   const convertTagsToBitFlags = (tagIds: string[]) => {
@@ -97,8 +99,10 @@ const ProfileDeployForm = ({
       setSelectedTags(existingTagIds);
 
       if (existingProfile.location) {
-        setLatitude(existingProfile.location.x.toString())
-        setLongitude(existingProfile.location.y.toString())
+        setLatitude(existingProfile.location.y.toString())
+        setLongitude(existingProfile.location.x.toString())
+        // Set a generic city name for existing profiles
+        setSelectedCity(`${existingProfile.location.x}, ${existingProfile.location.y}`)
       }
     }
   }, [existingProfile])
@@ -112,6 +116,12 @@ const ProfileDeployForm = ({
     calls: [], // Initialize with empty calls array
   })
   const buttonsDisabled = ["approve"].includes(lastTxStatus)
+
+  const handleCitySelect = (city: { name: string; latitude: number; longitude: number }) => {
+    setSelectedCity(city.name)
+    setLatitude(city.latitude.toString())
+    setLongitude(city.longitude.toString())
+  }
 
   const handleDeployProfile = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -218,7 +228,13 @@ const ProfileDeployForm = ({
         maxTags={10}
       />
 
-      <div className="form-grid-2">
+      <div className="form-grid-3">
+        <CitySelector
+          onCitySelect={handleCitySelect}
+          initialValue={selectedCity}
+          disabled={buttonsDisabled}
+        />
+
         <div className="form-group">
           <label htmlFor="latitude" className="form-label">
             Latitude:
@@ -231,6 +247,7 @@ const ProfileDeployForm = ({
             placeholder="Enter latitude"
             step="0.000001"
             className="form-input"
+            readOnly
           />
         </div>
 
@@ -246,6 +263,7 @@ const ProfileDeployForm = ({
             placeholder="Enter longitude"
             step="0.000001"
             className="form-input"
+            readOnly
           />
         </div>
       </div>
