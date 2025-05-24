@@ -1,14 +1,21 @@
 import React from 'react';
 import Map, { Marker, type MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { getProfilesWithinArea } from '../../api/profiles';
+import { getProfilesWithinArea, getProfileByAddress } from '../../api/profiles';
 import type { ProfileResponse } from '../../api/types';
 // import { Link } from 'react-router-dom';
 import { ProfilePopup } from '../../components/Profile/ProfilePopup';
+import { TagFilter } from '../../components/Tags/TagFilter';
+import { AVAILABLE_TAGS } from '../../components/Tags/tags';
+import { useAccount } from "@starknet-react/core";
+import { addressesEqual } from '../../utils/addressHelpers';
 
 const Maps = () => {
     const mapRef = React.useRef<MapRef>(null);
     const [selectedProfile, setSelectedProfile] = React.useState<ProfileResponse | null>(null);
+    const { address: connectedUserAddress } = useAccount();
+    const [userProfile, setUserProfile] = React.useState<ProfileResponse | null>(null);
+    const [filterTags, setFilterTags] = React.useState<string[]>([]);
 
     const [viewport, setViewport] = React.useState<{
         latitude: number;
@@ -32,6 +39,29 @@ const Maps = () => {
     const mapboxAPIToken = "pk.eyJ1Ijoic3RldmVuZHNheWxvciIsImEiOiJja295ZmxndGEwbGxvMm5xdTc3M2MwZ2xkIn0.WDBLMZYfh-ZGFjmwO82xvw";
     const profilesContractAddress = import.meta.env.VITE_PROFILES_CONTRACT_ADDRESS;
 
+    // Fetch user's profile to center map on their location
+    React.useEffect(() => {
+        if (connectedUserAddress) {
+            getProfileByAddress(connectedUserAddress)
+                .then(response => {
+                    if (response && typeof response === 'object' && 'address' in response) {
+                        const profile = response as ProfileResponse;
+                        setUserProfile(profile);
+                        // Center map on user's location
+                        setViewport(prev => ({
+                            ...prev,
+                            latitude: profile.location.y,
+                            longitude: profile.location.x,
+                            zoom: 10 // Zoom in more when centering on user
+                        }));
+                    }
+                })
+                .catch(err => {
+                    console.log('Could not fetch user profile for map centering:', err);
+                });
+        }
+    }, [connectedUserAddress]);
+
     // Debounced fetch on map move
     React.useEffect(() => {
         const timeoutId = setTimeout(() => {
@@ -42,6 +72,12 @@ const Maps = () => {
     }, [viewport.latitude, viewport.longitude, viewport.zoom]);
 
     const markerOnClick = (profile: ProfileResponse) => {
+        // Don't allow clicking on own marker
+        if (addressesEqual(profile.address, connectedUserAddress)) {
+            console.log('Clicked on own marker, ignoring');
+            return;
+        }
+
         const coord = profileToCoord(profile);
         // Center the map on the clicked marker
         if (mapRef.current) {
@@ -94,6 +130,41 @@ const Maps = () => {
         setLoading(false);
     };
 
+    // Helper function to check if profile has specific tags based on bit flags
+    const profileHasTag = (profile: ProfileResponse, tagId: string): boolean => {
+        const tagIndex = AVAILABLE_TAGS.findIndex(tag => tag.id === tagId);
+        if (tagIndex < 0) return false;
+
+        // Get the bit flag values from profile and ensure they're numbers
+        const tags0 = Number(profile.tags0 || 0);
+        const tags1 = Number(profile.tags1 || 0);
+
+        if (tagIndex < 32) {
+            return (tags0 & (1 << tagIndex)) !== 0;
+        } else if (tagIndex < 64) {
+            return (tags1 & (1 << (tagIndex - 32))) !== 0;
+        }
+
+        return false;
+    };
+
+    // Filter profiles based on selected tags
+    const filteredProfiles = React.useMemo(() => {
+        if (filterTags.length === 0) {
+            return profiles;
+        }
+
+        return profiles.filter(profile => {
+            // Always show user's own profile regardless of filter tags
+            if (addressesEqual(profile.address, connectedUserAddress)) {
+                return true;
+            }
+
+            // Check if profile has any of the selected filter tags
+            return filterTags.some(filterTag => profileHasTag(profile, filterTag));
+        });
+    }, [profiles, filterTags, connectedUserAddress]);
+
     return (
         <div style={{ height: '100%', padding: '1rem' }}>
             <div>
@@ -103,6 +174,13 @@ const Maps = () => {
                     <div>Click on a marker to see its coordinates</div>
                 )}
             </div>
+
+            <TagFilter
+                selectedTags={filterTags}
+                onTagsChange={setFilterTags}
+                maxTags={5}
+            />
+
             <div style={{ margin: '0.5rem 0' }}>
                 {/* <button onClick={fetchProfilesWithinArea} disabled={loading} style={{ marginLeft: '1rem' }}>
                     Fetch Profiles Within Area
@@ -116,23 +194,32 @@ const Maps = () => {
                 style={{ height: '80%' }}
                 ref={mapRef}
             >
-                {profiles.map((profile, index) => {
+                {filteredProfiles.map((profile, index) => {
                     const coord = profileToCoord(profile);
+                    const isOwnProfile = addressesEqual(profile.address, connectedUserAddress);
+                    const isSelected = selectedCoord?.latitude === coord.latitude && selectedCoord?.longitude === coord.longitude;
+
+                    console.log('Profile:', profile.address, 'Connected:', connectedUserAddress, 'IsOwn:', isOwnProfile);
+
                     return (
                         <Marker key={profile.address || index} latitude={coord.latitude} longitude={coord.longitude}>
                             <div
                                 onClick={() => markerOnClick(profile)}
                                 style={{
-                                    backgroundColor:
-                                        selectedCoord?.latitude === coord.latitude && selectedCoord?.longitude === coord.longitude
+                                    backgroundColor: isOwnProfile
+                                        ? 'green'
+                                        : isSelected
                                             ? 'red'
                                             : 'blue',
                                     borderRadius: '50%',
-                                    width: '10px',
-                                    height: '10px',
-                                    cursor: 'pointer'
+                                    width: isOwnProfile ? '12px' : '10px',
+                                    height: isOwnProfile ? '12px' : '10px',
+                                    cursor: isOwnProfile ? 'default' : 'pointer',
+                                    border: isOwnProfile ? '2px solid darkgreen' : 'none',
+                                    boxSizing: 'border-box',
+                                    opacity: isOwnProfile ? 0.8 : 1
                                 }}
-                                title={profile.name || profile.address}
+                                title={isOwnProfile ? `You (${profile.name || profile.address})` : (profile.name || profile.address)}
                             ></div>
                         </Marker>
                     );
@@ -153,11 +240,16 @@ const Maps = () => {
             </Map>
             <div style={{ marginTop: '1rem' }}>
                 <h3>Profiles List</h3>
+                {filterTags.length > 0 && (
+                    <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                        Showing {filteredProfiles.length} of {profiles.length} profiles
+                    </p>
+                )}
                 {loading ? (
                     <div>Loading...</div>
                 ) : (
                     <ul>
-                        {profiles.map((profile) => (
+                        {filteredProfiles.map((profile) => (
                             <li key={profile.address}>
                                 <strong>{profile.name || profile.address}</strong>
                                 {' '}

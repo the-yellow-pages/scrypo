@@ -62,7 +62,7 @@ export const ProfilePopup: React.FC<ProfilePopupProps> = ({
 
             // Encrypt the message
             const encryptedMsg = await encrypt(message, recipientPubKey);
-            
+
             // Convert encrypted message to felt array
             // todo : use a more efficient way to convert to felt array
             const msgFelts = Array.from(encryptedMsg).map(byte => byte.toString());
@@ -111,7 +111,7 @@ export const ProfilePopup: React.FC<ProfilePopupProps> = ({
                 </h3>
                 <p style={{ margin: '4px 0', fontSize: '14px' }}>
                     <strong>Address:</strong>{' '}
-                    <Link 
+                    <Link
                         to={`/profile/${profile.address}`}
                         style={{ color: '#0066cc', textDecoration: 'none' }}
                         title={profile.address}
@@ -134,14 +134,24 @@ export const ProfilePopup: React.FC<ProfilePopupProps> = ({
                 )} */}
 
                 {!showMessageInput ? (
-                    <Button
-                        onClick={() => setShowMessageInput(true)}
-                        disabled={!profile.pubkey_hi || sending}
-                        hideChevron
-                        className="mt-2 w-full"
-                    >
-                        Send Message
-                    </Button>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        <Link to={`/profile/${profile.address}`} style={{ flex: 1 }}>
+                            <Button
+                                hideChevron
+                                className="w-full"
+                            >
+                                View Profile
+                            </Button>
+                        </Link>
+                        <Button
+                            onClick={() => setShowMessageInput(true)}
+                            disabled={!profile.pubkey_hi || sending}
+                            hideChevron
+                            style={{ flex: 1 }}
+                        >
+                            Send Message
+                        </Button>
+                    </div>
                 ) : (
                     <form onSubmit={handleSendMessage} className="mt-2">
                         <div className="relative">
@@ -184,4 +194,4 @@ export const ProfilePopup: React.FC<ProfilePopupProps> = ({
             </div>
         </Popup>
     );
-}; 
+};
