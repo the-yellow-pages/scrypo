@@ -2,17 +2,25 @@ import { useAccount, useContract, useSendTransaction } from "@starknet-react/cor
 import { useState, useEffect } from "react"
 import { CallData } from "starknet"
 import { profileRegistryAbi } from "abi/profileRegistryAbi"
-import { Button } from "components/Button"
 import { useUserKeyGenerator } from "msg/UserKeyGenerator"
 import { pubToFelts } from "msg/keyHelpers"
 import { degToFelt } from "helpers/cords"
+import { TagSelector } from "components/Tags/TagSelector"
+import { AVAILABLE_TAGS } from "components/Tags/tags"
 import type { ProfileResponse } from "../../api/types"
+import "../../styles/form.css"
 
 interface ProfileDeployFormProps {
   setLastTxError: (error: string) => void
   contractAddress: `0x${string}`
   existingProfile?: ProfileResponse | null
   onSuccess?: () => void
+  onSubmit?: (formData: {
+    name: string;
+    selectedTags: string[];
+    latitude: string;
+    longitude: string;
+  }) => Promise<void>
 }
 
 const ProfileDeployForm = ({
@@ -20,6 +28,7 @@ const ProfileDeployForm = ({
   contractAddress,
   existingProfile,
   onSuccess,
+  onSubmit,
 }: ProfileDeployFormProps) => {
   const { account } = useAccount()
   const [lastTxStatus, setLastTxStatus] = useState("idle")
@@ -27,15 +36,66 @@ const ProfileDeployForm = ({
 
   // Form state
   const [name, setName] = useState("")
-  const [tags0, setTags0] = useState("0")
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [latitude, setLatitude] = useState("0")
   const [longitude, setLongitude] = useState("0")
+
+  // Convert tag IDs to bit flags
+  const convertTagsToBitFlags = (tagIds: string[]) => {
+    let tags0 = 0;
+    let tags1 = 0;
+
+    tagIds.forEach(tagId => {
+      const tagIndex = AVAILABLE_TAGS.findIndex(tag => tag.id === tagId);
+      if (tagIndex >= 0) {
+        if (tagIndex < 32) {
+          tags0 |= (1 << tagIndex);
+        } else if (tagIndex < 64) {
+          tags1 |= (1 << (tagIndex - 32));
+        }
+      }
+    });
+
+    return { tags0, tags1 };
+  };
+
+  // Convert bit flags back to tag IDs
+  const convertBitFlagsToTags = (tags0: number, tags1: number) => {
+    const tagIds: string[] = [];
+
+    for (let i = 0; i < AVAILABLE_TAGS.length; i++) {
+      let isSet = false;
+
+      if (i < 32) {
+        isSet = (tags0 & (1 << i)) !== 0;
+      } else if (i < 64) {
+        isSet = (tags1 & (1 << (i - 32))) !== 0;
+      }
+
+      if (isSet) {
+        tagIds.push(AVAILABLE_TAGS[i].id);
+      }
+    }
+
+    return tagIds;
+  };
 
   // Prefill form with existing profile data if available
   useEffect(() => {
     if (existingProfile) {
       setName(existingProfile.name || "")
-      setTags0(existingProfile.tags0?.toString() || "0")
+
+      // Convert existing tags to selected tag IDs - ensure proper number conversion
+      const tags0Value = typeof existingProfile.tags0 === 'string'
+        ? parseInt(existingProfile.tags0, 10) || 0
+        : existingProfile.tags0 || 0;
+      const tags1Value = typeof existingProfile.tags1 === 'string'
+        ? parseInt(existingProfile.tags1, 10) || 0
+        : existingProfile.tags1 || 0;
+
+      const existingTagIds = convertBitFlagsToTags(tags0Value, tags1Value);
+      setSelectedTags(existingTagIds);
+
       if (existingProfile.location) {
         setLatitude(existingProfile.location.x.toString())
         setLongitude(existingProfile.location.y.toString())
@@ -54,21 +114,32 @@ const ProfileDeployForm = ({
   const buttonsDisabled = ["approve"].includes(lastTxStatus)
 
   const handleDeployProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (onSubmit) {
+      await onSubmit({
+        name,
+        selectedTags,
+        latitude,
+        longitude,
+      })
+      return
+    }
+
     try {
       setLastTxError("")
-      e.preventDefault()
       setLastTxStatus("approve")
 
       // Always generate new keys
       console.log("Starting key generation...")
       const { publicKey: newPublicKey } = await generateKeys()
       console.log("Generated public key:", newPublicKey)
-      
+
       let pubkeyHi: string, pubkeyLo: string;
       try {
         [pubkeyHi, pubkeyLo] = pubToFelts(newPublicKey)
         console.log("Converted to felts:", { pubkeyHi, pubkeyLo })
-        
+
         // Ensure keys are not zero
         if (pubkeyHi === "0x0" || pubkeyLo === "0x0") {
           throw new Error("Generated keys cannot be zero")
@@ -84,14 +155,14 @@ const ProfileDeployForm = ({
 
       const latitudeFelt = degToFelt(parseFloat(latitude)).toString()
       const longitudeFelt = degToFelt(parseFloat(longitude)).toString()
-      const tagsValue = parseInt(tags0) || 0
+      const { tags0, tags1 } = convertTagsToBitFlags(selectedTags);
 
       const calldata = CallData.compile([
         name || "0x0", // name (felt252)
-        { low: tagsValue, high: 0 }, // tags0 (u256)
-        { low: 0, high: 0}, // tags1 (u256)
-        { low: 0, high: 0}, // tags2 (u256)
-        { low: 0, high: 0}, // tags3 (u256)
+        { low: tags0, high: 0 }, // tags0 (u256)
+        { low: tags1, high: 0 }, // tags1 (u256)
+        { low: 0, high: 0 }, // tags2 (u256)
+        { low: 0, high: 0 }, // tags3 (u256)
         latitudeFelt, // latitude (felt252)
         longitudeFelt, // longitude (felt252)
         pubkeyHi, // pubkey_hi (felt252)
@@ -107,7 +178,7 @@ const ProfileDeployForm = ({
           calldata,
         },
       ])
-      
+
       console.log("Transaction sent:", transaction_hash)
       setTimeout(() => {
         alert(`Transaction sent: ${transaction_hash}`)
@@ -122,69 +193,64 @@ const ProfileDeployForm = ({
   }
 
   return (
-    <div className="flex w-full column gap-4">
-      <h3>{existingProfile ? "Update Profile" : "Create Profile"}</h3>
-      
+    <form className="form-container" onSubmit={handleDeployProfile}>
+      <h3 className="form-title">
+        {existingProfile ? "Update Profile" : "Create Profile"}
+      </h3>
+
       <div className="form-group">
-        <label htmlFor="name">Name:</label>
-        <input 
-          type="text" 
-          id="name" 
-          value={name} 
+        <label htmlFor="name" className="form-label">
+          Name:
+        </label>
+        <input
+          type="text"
+          id="name"
+          value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Enter your name"
-          className="w-full p-2 border rounded"
+          className="form-input"
         />
       </div>
 
-      <div className="form-group">
-        <label htmlFor="tags0">Tags (numeric value):</label>
-        <input 
-          type="number" 
-          id="tags0" 
-          value={tags0} 
-          onChange={(e) => setTags0(e.target.value)}
-          placeholder="Enter tag value"
-          className="w-full p-2 border rounded"
-        />
-      </div>
+      <TagSelector
+        selectedTags={selectedTags}
+        onTagsChange={setSelectedTags}
+        maxTags={10}
+      />
 
-      <div className="form-group">
-        <label htmlFor="latitude">Latitude:</label>
-        <input 
-          type="number" 
-          id="latitude" 
-          value={latitude} 
-          onChange={(e) => setLatitude(e.target.value)}
-          placeholder="Enter latitude"
-          className="w-full p-2 border rounded"
-          step="0.000001"
-        />
-      </div>
+      <div className="form-grid-2">
+        <div className="form-group">
+          <label htmlFor="latitude" className="form-label">
+            Latitude:
+          </label>
+          <input
+            type="number"
+            id="latitude"
+            value={latitude}
+            onChange={(e) => setLatitude(e.target.value)}
+            placeholder="Enter latitude"
+            step="0.000001"
+            className="form-input"
+          />
+        </div>
 
-      <div className="form-group">
-        <label htmlFor="longitude">Longitude:</label>
-        <input 
-          type="number" 
-          id="longitude" 
-          value={longitude} 
-          onChange={(e) => setLongitude(e.target.value)}
-          placeholder="Enter longitude"
-          className="w-full p-2 border rounded"
-          step="0.000001"
-        />
+        <div className="form-group">
+          <label htmlFor="longitude" className="form-label">
+            Longitude:
+          </label>
+          <input
+            type="number"
+            id="longitude"
+            value={longitude}
+            onChange={(e) => setLongitude(e.target.value)}
+            placeholder="Enter longitude"
+            step="0.000001"
+            className="form-input"
+          />
+        </div>
       </div>
-
-      <Button
-        className="w-full"
-        onClick={handleDeployProfile}
-        disabled={buttonsDisabled}
-        hideChevron
-      >
-        {lastTxStatus === "approve" ? "Waiting for transaction" : existingProfile ? "Update Profile" : "Deploy Profile"}
-      </Button>
-    </div>
+    </form>
   )
 }
 
-export { ProfileDeployForm } 
+export { ProfileDeployForm }

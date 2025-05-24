@@ -5,6 +5,8 @@ import { getProfileByAddress } from '../../api/profiles';
 import { type ProfileResponse, type ErrorResponse } from '../../api/types';
 import { useAccount } from "@starknet-react/core";
 import { Button } from 'components/Button';
+import '../../styles/profile.css';
+import '../../styles/form.css';
 
 // Import Helper Sub-components
 import LoadingIndicator from './components/LoadingIndicator';
@@ -88,9 +90,9 @@ function Profile() {
             {/* Profile Data Section */}
             {profileData ? (
                 <div className="bg-white p-4 rounded-lg shadow mb-4">
-                    <FetchedProfileDisplay 
-                        profileData={profileData} 
-                        isOwnProfile={isOwnProfile} 
+                    <FetchedProfileDisplay
+                        profileData={profileData}
+                        isOwnProfile={isOwnProfile}
                         profilesContractAddress={profilesContractAddress}
                     />
                 </div>
@@ -98,27 +100,49 @@ function Profile() {
                 <ProfileNotFoundMessage address={addressFromUrl} />
             ) : null}
 
-            {/* Actions Section - Always visible for own profile */}
-            {isOwnProfile && (
-                <div className="mt-4">
-                    {/* Profile Action Button */}
-                    <div className="bg-white p-4 rounded-lg shadow mb-4">
-                        <Button
-                            onClick={() => navigate('/profile/deploy', { 
-                                state: { profile: profileData } 
-                            })}
-                            className="w-full"
-                            hideChevron
-                        >
-                            {profileData ? 'Edit Profile' : 'Create Profile'}
-                        </Button>
+            {/* Actions Section */}
+            {(isOwnProfile || (!isOwnProfile && profileData)) && (
+                <div className="bg-white p-6 rounded-lg shadow mt-4">
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: '16px',
+                        marginBottom: !isOwnProfile && profileData ? '24px' : '0'
+                    }}>
+                        {isOwnProfile && (
+                            <button
+                                onClick={() => navigate('/profile/deploy', {
+                                    state: { profile: profileData }
+                                })}
+                                className="form-button form-button-large"
+                            >
+                                {profileData ? 'Edit Profile' : 'Create Profile'}
+                            </button>
+                        )}
+
+                        {!isOwnProfile && profileData && (
+                            <button
+                                onClick={() => {
+                                    // Toggle or navigate to send tokens section
+                                    const sendSection = document.getElementById('send-tokens-section');
+                                    if (sendSection) {
+                                        sendSection.scrollIntoView({ behavior: 'smooth' });
+                                    }
+                                }}
+                                className="form-button form-button-large"
+                            >
+                                Send Tokens
+                            </button>
+                        )}
                     </div>
 
-                    {/* Token Transfer Section */}
-                    <div className="bg-white p-4 rounded-lg shadow">
-                        <h3 className="text-lg font-semibold mb-2">Send Tokens</h3>
-                        <SendERC20 setLastTxError={setLastTxError} />
-                    </div>
+                    {/* Token Transfer Section - Only for other profiles */}
+                    {!isOwnProfile && profileData && (
+                        <div id="send-tokens-section">
+                            <h3 className="text-lg font-semibold mb-2">Send Tokens to {profileData.name || 'User'}</h3>
+                            <SendERC20 setLastTxError={setLastTxError} />
+                        </div>
+                    )}
                 </div>
             )}
         </div>

@@ -1,53 +1,134 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ProfileDeployForm } from "../../components/Profile/ProfileDeployForm";
+import { useAccount, useContract, useSendTransaction } from "@starknet-react/core";
+import { CallData } from "starknet";
+import { profileRegistryAbi } from "abi/profileRegistryAbi";
 import { useUserKeyGenerator } from "msg/UserKeyGenerator";
+import { pubToFelts } from "msg/keyHelpers";
+import { degToFelt } from "helpers/cords";
+import { AVAILABLE_TAGS } from "../../components/Tags/tags";
+import { ProfileDeployForm } from "../../components/Profile/ProfileDeployForm";
 import type { ProfileResponse } from "../../api/types";
+import "../../styles/form.css";
 
 function ProfileDeploy() {
     const [lastTxError, setLastTxError] = useState("");
-    const [publicKey, setPublicKey] = useState<string>("");
-    const { generateKeys } = useUserKeyGenerator();
+    const [lastTxStatus, setLastTxStatus] = useState("idle");
     const navigate = useNavigate();
     const location = useLocation();
     const existingProfile = location.state?.profile as ProfileResponse | undefined;
+    const { account } = useAccount();
+    const { generateKeys } = useUserKeyGenerator();
 
     const profilesContractAddress = import.meta.env.VITE_PROFILES_CONTRACT_ADDRESS;
     if (!profilesContractAddress) {
         throw new Error("VITE_PROFILES_CONTRACT_ADDRESS environment variable is not set");
     }
 
-    const handleGenerateKeys = async () => {
-        try {
-            console.log('Starting key generation...');
-            const { publicKey: newPublicKey } = await generateKeys();
-            console.log('Received public key:', newPublicKey);
-            if (!newPublicKey || newPublicKey.length === 0) {
-                throw new Error('Generated public key is empty');
+    const { contract } = useContract({
+        abi: profileRegistryAbi,
+        address: profilesContractAddress as `0x${string}`,
+    });
+
+    const { sendAsync } = useSendTransaction({
+        calls: [],
+    });
+
+    const buttonsDisabled = ["approve"].includes(lastTxStatus);
+
+    // Convert tag IDs to bit flags
+    const convertTagsToBitFlags = (tagIds: string[]) => {
+        let tags0 = 0;
+        let tags1 = 0;
+
+        tagIds.forEach(tagId => {
+            const tagIndex = AVAILABLE_TAGS.findIndex(tag => tag.id === tagId);
+            if (tagIndex >= 0) {
+                if (tagIndex < 32) {
+                    tags0 |= (1 << tagIndex);
+                } else if (tagIndex < 64) {
+                    tags1 |= (1 << (tagIndex - 32));
+                }
             }
-            const hexKey = Array.from(newPublicKey).map(b => b.toString(16).padStart(2, '0')).join('');
-            console.log('Converted to hex:', hexKey);
-            setPublicKey(hexKey);
+        });
+
+        return { tags0, tags1 };
+    };
+
+    const handleFormSubmit = async (formData: {
+        name: string;
+        selectedTags: string[];
+        latitude: string;
+        longitude: string;
+    }) => {
+        try {
+            setLastTxError("");
+            setLastTxStatus("approve");
+
+            // Always generate new keys
+            console.log("Starting key generation...");
+            const { publicKey: newPublicKey } = await generateKeys();
+            console.log("Generated public key:", newPublicKey);
+
+            let pubkeyHi: string, pubkeyLo: string;
+            try {
+                [pubkeyHi, pubkeyLo] = pubToFelts(newPublicKey);
+                console.log("Converted to felts:", { pubkeyHi, pubkeyLo });
+
+                // Ensure keys are not zero
+                if (pubkeyHi === "0x0" || pubkeyLo === "0x0") {
+                    throw new Error("Generated keys cannot be zero");
+                }
+            } catch (convError) {
+                console.error("Error converting public key to felts:", convError);
+                throw convError;
+            }
+
+            if (!contract || !account?.address) {
+                throw new Error("Contract or account not initialized");
+            }
+
+            const latitudeFelt = degToFelt(parseFloat(formData.latitude)).toString();
+            const longitudeFelt = degToFelt(parseFloat(formData.longitude)).toString();
+            const { tags0, tags1 } = convertTagsToBitFlags(formData.selectedTags);
+
+            const calldata = CallData.compile([
+                formData.name || "0x0", // name (felt252)
+                { low: tags0, high: 0 }, // tags0 (u256)
+                { low: tags1, high: 0 }, // tags1 (u256)
+                { low: 0, high: 0 }, // tags2 (u256)
+                { low: 0, high: 0 }, // tags3 (u256)
+                latitudeFelt, // latitude (felt252)
+                longitudeFelt, // longitude (felt252)
+                pubkeyHi, // pubkey_hi (felt252)
+                pubkeyLo, // pubkey_lo (felt252)
+            ]);
+            console.log("Compiled calldata:", calldata);
+
+            console.log("Sending transaction...");
+            const { transaction_hash } = await sendAsync([
+                {
+                    contractAddress: profilesContractAddress as `0x${string}`,
+                    entrypoint: "deploy_profile",
+                    calldata,
+                },
+            ]);
+
+            console.log("Transaction sent:", transaction_hash);
+            setTimeout(() => {
+                alert(`Transaction sent: ${transaction_hash}`);
+                navigate(-1);
+            }, 1000);
         } catch (error) {
-            console.error('Key generation error:', error);
-            setLastTxError(error instanceof Error ? error.message : "Failed to generate keys");
+            console.error("Full error object:", error);
+            setLastTxError((error as Error).message);
+        } finally {
+            setLastTxStatus("idle");
         }
     };
 
     return (
         <div className="p-4 max-w-2xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">
-                    {existingProfile ? 'Update Profile' : 'Create New Profile'}
-                </h1>
-                <button 
-                    onClick={() => navigate(-1)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                    ← Back
-                </button>
-            </div>
-
             {lastTxError && (
                 <div className="error-message p-4 bg-red-100 border border-red-400 rounded mb-4">
                     <p>Error: {lastTxError}</p>
@@ -58,17 +139,41 @@ function ProfileDeploy() {
                 <ProfileDeployForm
                     setLastTxError={setLastTxError}
                     contractAddress={profilesContractAddress as `0x${string}`}
-                    publicKey={publicKey}
-                    handleGenerateKeys={handleGenerateKeys}
                     existingProfile={existingProfile}
-                    onSuccess={() => {
-                        // Navigate back to profile page after successful deployment/update
-                        navigate(-1);
-                    }}
+                    onSubmit={handleFormSubmit}
                 />
+
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: '16px',
+                    marginTop: '24px'
+                }}>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="form-button form-button-large form-button-secondary"
+                    >
+                        ← Back
+                    </button>
+
+                    <button
+                        type="submit"
+                        form="profile-form"
+                        className={`form-button form-button-large ${buttonsDisabled ? 'disabled' : ''}`}
+                        disabled={buttonsDisabled}
+                        onClick={(e) => {
+                            const form = document.querySelector('form') as HTMLFormElement;
+                            if (form) {
+                                form.requestSubmit();
+                            }
+                        }}
+                    >
+                        {lastTxStatus === "approve" ? "Waiting for transaction" : existingProfile ? "Update Profile" : "Deploy Profile"}
+                    </button>
+                </div>
             </div>
         </div>
     );
 }
 
-export default ProfileDeploy; 
+export default ProfileDeploy;
