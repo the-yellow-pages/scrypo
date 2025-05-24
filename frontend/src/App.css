@@ -6,10 +6,10 @@
   text-align: center;
 }
 
-/* Ensure scrolling is disabled for the body and root elements */
+/* Enable Y scrolling for the body */
 body {
-  overflow: hidden;
-  /* Disable scrolling */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .logo {
@@ -55,15 +55,17 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow-y: auto;
 }
-
 
 .main-content {
   flex: 1;
   padding: 1rem;
-  /* Allow the main content to take up the remaining space */
+  overflow-y: auto;
+  padding-bottom: 80px; /* Add space for fixed navbar */
 }
 
+/* Navbar styles */
 .navbar {
   position: fixed;
   bottom: 0;

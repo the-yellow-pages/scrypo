@@ -167,14 +167,6 @@ const Maps = () => {
 
     return (
         <div style={{ height: '100%', padding: '1rem' }}>
-            <div>
-                {selectedCoord ? (
-                    <div>Selected Coordinates: Latitude {selectedCoord.latitude}, Longitude {selectedCoord.longitude}</div>
-                ) : (
-                    <div>Click on a marker to see its coordinates</div>
-                )}
-            </div>
-
             <TagFilter
                 selectedTags={filterTags}
                 onTagsChange={setFilterTags}
