@@ -90,8 +90,8 @@ export default function (runtimeConfig: ApibaraRuntimeConfig) {
                         tags2: reconstructU256(tags2Low, tags2High).toString(),
                         tags3: reconstructU256(tags3Low, tags3High).toString(),
                         location: {
-                            x: feltToDeg(BigInt(latFelt)),
-                            y: feltToDeg(BigInt(lonFelt)),
+                            y: feltToDeg(BigInt(latFelt)),
+                            x: feltToDeg(BigInt(lonFelt)),
                         },
                         pubkey_hi: BigInt(pubkeyHi).toString(),
                         pubkey_lo: BigInt(pubkeyLo).toString(),
