@@ -2,16 +2,39 @@ import React, { useState } from 'react';
 import { Popup } from 'react-map-gl/mapbox';
 import { Link } from 'react-router-dom';
 import { Button } from '../Button';
+import { TagChip } from '../Tags/TagChip';
+import { AVAILABLE_TAGS } from '../Tags/tags';
 import { useContract, useSendTransaction } from "@starknet-react/core";
 import { profileRegistryAbi } from "abi/profileRegistryAbi";
 import { CallData } from "starknet";
-import {encrypt, feltsToPub, feltsToUint8Array, uint8ArrayToFelts} from "msg/keyHelpers";
+import { encrypt, feltsToPub, feltsToUint8Array, uint8ArrayToFelts } from "msg/keyHelpers";
 import type { ProfileResponse } from '../../api/types';
 
 // Helper function to truncate address
 const truncateAddress = (address: string) => {
     if (address.length <= 13) return address;
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
+
+// Helper function to get tag IDs from bit flags
+const getTagsFromBitFlags = (tags0: number, tags1: number): string[] => {
+    const tagIds: string[] = [];
+
+    // Check tags0 (first 32 tags)
+    for (let i = 0; i < 32 && i < AVAILABLE_TAGS.length; i++) {
+        if (tags0 & (1 << i)) {
+            tagIds.push(AVAILABLE_TAGS[i].id);
+        }
+    }
+
+    // Check tags1 (next 32 tags)
+    for (let i = 32; i < 64 && i < AVAILABLE_TAGS.length; i++) {
+        if (tags1 & (1 << (i - 32))) {
+            tagIds.push(AVAILABLE_TAGS[i].id);
+        }
+    }
+
+    return tagIds;
 };
 
 interface ProfilePopupProps {
@@ -98,6 +121,8 @@ export const ProfilePopup: React.FC<ProfilePopupProps> = ({
         }
     };
 
+    const profileTags = getTagsFromBitFlags(Number(profile.tags0 || 0), Number(profile.tags1 || 0));
+
     return (
         <Popup
             latitude={latitude}
@@ -121,10 +146,15 @@ export const ProfilePopup: React.FC<ProfilePopupProps> = ({
                         {truncateAddress(profile.address)}
                     </Link>
                 </p>
-                {profile.tags0 && (
-                    <p style={{ margin: '4px 0', fontSize: '14px' }}>
-                        <strong>Tags:</strong> {profile.tags0}
-                    </p>
+                {profileTags.length > 0 && (
+                    <div style={{ margin: '8px 0' }}>
+                        <strong style={{ fontSize: '14px', display: 'block', marginBottom: '4px' }}>Tags:</strong>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {profileTags.map(tagId => (
+                                <TagChip key={tagId} tagId={tagId} size="sm" />
+                            ))}
+                        </div>
+                    </div>
                 )}
                 <p style={{ margin: '4px 0', fontSize: '14px' }}>
                     <strong>Location:</strong> ({profile.location.x}, {profile.location.y})
