@@ -14,7 +14,7 @@ function Pings() {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [keys, setKeys] = useState<{ publicKey: Uint8Array; privateKey: Uint8Array } | null>(null);
-    
+
     const { address: connectedUserAddress, isConnected, account } = useAccount();
     const { generateKeys } = useUserKeyGenerator();
 
@@ -41,7 +41,7 @@ function Pings() {
             setIsLoading(true);
             setMessages([]);
             setError(null);
-            
+
             getMessagesByRecipient(connectedUserAddress)
                 .then(response => {
                     console.log(response);
@@ -92,25 +92,29 @@ function Pings() {
 
     return (
         <div className="p-4">
-            <h2 className="text-2xl font-bold mb-4">Your Messages</h2>
+            <h2 className="text-2xl font-bold mb-6">Your Messages</h2>
             {messages.length === 0 ? (
                 <p className="text-gray-500">No messages found.</p>
             ) : (
-                <div className="space-y-4">
-                    {messages.map((message) => (
-                        <div key={message.id} className="bg-white p-4 rounded-lg shadow">
-                            <div className="flex justify-between items-start mb-2">
-                                <span className="text-sm text-gray-500">
-                                    From: {message.sender}
+                <div className="space-y-6">
+                    {messages.map((message, index) => (
+                        <div key={message.id} className={`bg-white p-6 rounded-lg shadow-md border-l-4`}>
+                            <div className="flex justify-between items-start mb-3">
+                                <span className={`text-sm font-semibold px-3 py-1 rounded-full border`}>
+                                    📧 {message.sender}
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                    {new Date(message.timestamp).toLocaleString()}
                                 </span>
                             </div>
-                            <p className="text-gray-800">
-                                {keys ? (
-                                    <DecryptedMessage content={message.message} decryptFn={decryptMessage} />
-                                ) : (
-                                    'Loading decryption keys...'
-                                )}
-                            </p>
+                            <div className="border-t border-gray-100 pt-3">
+                                <p className="text-gray-800 leading-relaxed">
+                                    {message.message}
+                                </p>
+                            </div>
+                            {index < messages.length - 1 && (
+                                <div className="mt-6 border-b border-gray-200"></div>
+                            )}
                         </div>
                     ))}
                 </div>
